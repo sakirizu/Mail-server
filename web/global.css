@@ -1,0 +1,79 @@
+/* Global styles for React Native Web to remove unwanted padding */
+
+/* Reset all padding-top for main containers */
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 100% !important;
+  overflow-x: hidden !important;
+}
+
+#root, [data-reactroot] {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+  min-height: 100vh !important;
+}
+
+/* Override React Native Web generated classes */
+.css-1dbjc4n {
+  padding-top: 0 !important;
+}
+
+.css-view-1dbjc4n {
+  padding-top: 0 !important;
+}
+
+/* Specific overrides for the classes mentioned */
+.r-paddingBlock-11f147o {
+  padding-bottom: 8px !important;
+  padding-top: 0px !important;
+}
+
+.css-view-g5y9jx.r-backgroundColor-11j01x2.r-borderBottomLeftRadius-pm2fo.r-borderTopLeftRadius-ou6ah9.r-boxShadow-17b9qp5.r-flex-13awgt0.r-overflow-1udh08x.r-position-bnwqim.r-transition-1fgtn9uv {
+  padding-top: 0px !important;
+}
+
+/* General overrides for any auto-generated padding classes */
+[class*="r-paddingTop"],
+[class*="paddingTop"],
+[style*="padding-top: 80px"],
+[style*="padding-top: 72px"],
+[style*="padding-top: 50px"] {
+  padding-top: 0px !important;
+}
+
+/* Ensure proper layout for main app components */
+[class*="topbar"] {
+  position: relative !important;
+  top: 0 !important;
+  z-index: 1000 !important;
+}
+
+/* Override any flex container padding */
+.css-view-175oi2r {
+  padding-top: 0 !important;
+}
+
+/* Override any main container padding */
+[role="main"], 
+main,
+[class*="container"] {
+  padding-top: 0 !important;
+}
+
+/* Specific overrides for common React Native Web patterns */
+div[style*="flex: 1"] {
+  padding-top: 0 !important;
+}
+
+div[style*="height: 100%"] {
+  padding-top: 0 !important;
+}
+
+/* Navigation and screen container overrides */
+[class*="Screen"],
+[class*="screen"],
+[class*="Container"],
+[class*="container"] {
+  padding-top: 0 !important;
+}

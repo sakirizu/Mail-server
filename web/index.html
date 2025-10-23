@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    
+    <title>SMail</title>
+    
+    <!-- Import global CSS -->
+    <link rel="stylesheet" href="./global.css" />
+    
+    <style>
+        /* Additional inline overrides */
+        * {
+            box-sizing: border-box;
+        }
+        
+        /* Force remove padding-top from any element */
+        .no-top-padding,
+        .remove-padding-top {
+            padding-top: 0 !important;
+        }
+        
+        /* Override specific React Native Web classes */
+        .r-paddingBlock-11f147o {
+            padding-bottom: 8px !important;
+            padding-top: 0px !important;
+        }
+        
+        .css-view-g5y9jx.r-backgroundColor-11j01x2.r-borderBottomLeftRadius-pm2fo.r-borderTopLeftRadius-ou6ah9.r-boxShadow-17b9qp5.r-flex-13awgt0.r-overflow-1udh08x.r-position-bnwqim.r-transition-1fgtn9uv {
+            padding-top: 0px !important;
+        }
+        
+        /* Sidebar positioning fixes */
+        [class*="sidebar"] {
+            top: 10px !important;
+            padding: 5px;
+            padding-top: 0 !important;
+        }
+        
+        /* Main content positioning */
+        [class*="mainContent"] {
+            padding-top: 0 !important;
+            margin-top: 0 !important;
+        }
+        
+        /* Ensure hamburger menu and content are properly separated */
+        [class*="menuContainer"] {
+            padding-top: 32px !important;
+        }
+        
+        /* TopBar specific positioning */
+        [class*="topbar"] {
+            position: relative !important;
+            z-index: 1001 !important;
+        }
+        
+        /* Search input improvements - Force remove ALL outlines and borders */
+        input {
+            outline: none !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+            appearance: none !important;
+            outline-style: none !important;
+            outline-width: 0 !important;
+            border-style: none !important;
+            border-width: 0 !important;
+        }
+        
+        input:focus,
+        input:active,
+        input:hover,
+        input:visited {
+            outline: none !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            -webkit-tap-highlight-color: transparent !important;
+            -webkit-focus-ring-color: transparent !important;
+            outline-style: none !important;
+            outline-width: 0 !important;
+            border-style: none !important;
+            border-width: 0 !important;
+        }
+        
+        /* Remove any default input styling */
+        input[type="text"],
+        input[type="search"],
+        input[type="email"] {
+            outline: none !important;
+            border: none !important;
+            box-shadow: none !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+            appearance: none !important;
+            background: transparent !important;
+            outline-style: none !important;
+            outline-width: 0 !important;
+            border-style: none !important;
+            border-width: 0 !important;
+        }
+        
+        /* Remove webkit focus rings and borders - STRONG overrides */
+        input:focus,
+        input:active,
+        input:hover {
+            outline: none !important;
+            border: none !important;
+            box-shadow: none !important;
+            -webkit-tap-highlight-color: transparent !important;
+            -webkit-focus-ring-color: transparent !important;
+            -webkit-user-select: auto !important;
+            user-select: auto !important;
+        }
+        
+        /* Force remove any possible outline or border selectors */
+        *:focus,
+        *:active {
+            outline: none !important;
+            box-shadow: none !important;
+            border: none !important;
+        }
+        
+        /* Search container hover effects */
+        [class*="searchContainer"]:hover {
+            background-color: #ffffff !important;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+        }
+        
+        /* Remove any blue highlights or selection borders */
+        * {
+            -webkit-tap-highlight-color: transparent !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+</body>
+</html>
