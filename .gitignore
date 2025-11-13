@@ -67,3 +67,6 @@ next-env.d.ts
 
 # TypeScript
 *.tsbuildinfo
+
+# Requirements update tracking
+.requirements-last-update
