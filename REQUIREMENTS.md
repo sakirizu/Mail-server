@@ -1,6 +1,6 @@
 # 📋 要件定義書 - Smail Email Client
 
-> **最終更新日**: 2025/11/13 12:32
+> **最終更新日**: 2025/11/13 13:55
 > **プロジェクト名**: Smail - Modern Email Client  
 > **バージョン**: 1.0.0
 
@@ -94,19 +94,24 @@ Mail-server/
 
 ## 📝 変更履歴
 
-### 2025-11-13 12:19:28 +0900
+### 2025-11-13 13:55:36 +0900
 
-#### 機能更新: 更新 .gitignore, パッケージ.json, と README の requirements tracking 機能 (Update .gitignore, package.json, and README for requirements tracking feature)
+#### その他: 実装 dark mode と 改善 UI layout と shadows instead の borders (Implement dark mode and improve UI layout with shadows instead of borders)
 
 - **作成者**: twichill
-- **コミット**: `30f7f2e`
+- **コミット**: `7a59fff`
 - **変更ファイル**:
-  - ➕ `.cursor/rules/000_global.mdc`
-  - ✏️ `.gitignore`
-  - ✏️ `README.md`
-  - ➕ `REQUIREMENTS.md`
-  - ✏️ `package.json`
-  - ➕ `scripts/update-requirements.js`
+  - ✏️ `REQUIREMENTS.md`
+  - ✏️ `app/(authenticated)/compose/page.tsx`
+  - ✏️ `app/(authenticated)/drafts/page.tsx`
+  - ✏️ `app/(authenticated)/inbox/page.tsx`
+  - ✏️ `app/(authenticated)/layout.tsx`
+  - ✏️ `app/(authenticated)/sent/page.tsx`
+  - ✏️ `app/(authenticated)/spam/page.tsx`
+  - ✏️ `app/(authenticated)/statistics/page.tsx`
+  - ✏️ `app/globals.css`
+  - ✏️ `components/MailItem.tsx`
+  - ...他4ファイル
 
 
 
