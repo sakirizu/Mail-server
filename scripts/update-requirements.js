@@ -60,21 +60,102 @@ function getChangedFiles(commitHash) {
   }
 }
 
+// 英語のコミットメッセージを日本語に変換（よく使われるパターンのみ）
+function translateCommitMessage(message) {
+  const commonPatterns = {
+    // 動詞
+    'add': '追加',
+    'update': '更新',
+    'fix': '修正',
+    'remove': '削除',
+    'delete': '削除',
+    'create': '作成',
+    'implement': '実装',
+    'improve': '改善',
+    'refactor': 'リファクタリング',
+    'clean': '整理',
+    'change': '変更',
+    'modify': '変更',
+    'enhance': '強化',
+    'optimize': '最適化',
+    'migrate': '移行',
+    'setup': 'セットアップ',
+    'configure': '設定',
+    // 名詞
+    'guide': 'ガイド',
+    'documentation': 'ドキュメント',
+    'docs': 'ドキュメント',
+    'readme': 'README',
+    'feature': '機能',
+    'bug': 'バグ',
+    'error': 'エラー',
+    'test': 'テスト',
+    'file': 'ファイル',
+    'files': 'ファイル',
+    'component': 'コンポーネント',
+    'page': 'ページ',
+    'service': 'サービス',
+    'function': '関数',
+    'module': 'モジュール',
+    'package': 'パッケージ',
+    'config': '設定',
+    'server': 'サーバー',
+    'client': 'クライアント',
+    'database': 'データベース',
+    'auth': '認証',
+    'security': 'セキュリティ',
+    'performance': 'パフォーマンス',
+    // よく使われるフレーズ
+    'initial commit': '初期コミット',
+    'clean up': '整理',
+    'for': 'の',
+    'to': 'へ',
+    'with': 'と',
+    'and': 'と',
+    'of': 'の',
+    'by': 'による',
+    'from': 'から',
+  };
+
+  let translated = message;
+  const lowerMessage = message.toLowerCase();
+  
+  // フレーズ単位で変換（長いものから順に）
+  Object.keys(commonPatterns).sort((a, b) => b.length - a.length).forEach(pattern => {
+    if (lowerMessage.includes(pattern)) {
+      translated = translated.replace(
+        new RegExp(pattern, 'gi'),
+        commonPatterns[pattern]
+      );
+    }
+  });
+
+  return translated;
+}
+
 // 変更内容を分類
 function categorizeChange(message) {
   const lowerMessage = message.toLowerCase();
+  const translatedMessage = translateCommitMessage(message).toLowerCase();
   
-  if (lowerMessage.includes('add') || lowerMessage.includes('追加') || lowerMessage.includes('新規')) {
+  if (lowerMessage.includes('add') || lowerMessage.includes('追加') || lowerMessage.includes('新規') || 
+      translatedMessage.includes('追加') || translatedMessage.includes('新規')) {
     return '機能追加';
-  } else if (lowerMessage.includes('fix') || lowerMessage.includes('修正') || lowerMessage.includes('bug')) {
+  } else if (lowerMessage.includes('fix') || lowerMessage.includes('修正') || lowerMessage.includes('bug') ||
+             translatedMessage.includes('修正') || translatedMessage.includes('バグ')) {
     return 'バグ修正';
-  } else if (lowerMessage.includes('update') || lowerMessage.includes('更新') || lowerMessage.includes('変更')) {
-    return '更新';
-  } else if (lowerMessage.includes('refactor') || lowerMessage.includes('リファクタ')) {
+  } else if (lowerMessage.includes('update') || lowerMessage.includes('更新') || lowerMessage.includes('変更') ||
+             translatedMessage.includes('更新') || translatedMessage.includes('変更')) {
+    return '機能更新';
+  } else if (lowerMessage.includes('refactor') || lowerMessage.includes('リファクタ') ||
+             translatedMessage.includes('リファクタリング')) {
     return 'リファクタリング';
-  } else if (lowerMessage.includes('remove') || lowerMessage.includes('削除') || lowerMessage.includes('clean')) {
+  } else if (lowerMessage.includes('remove') || lowerMessage.includes('delete') || lowerMessage.includes('削除') || 
+             lowerMessage.includes('clean') || translatedMessage.includes('削除') || translatedMessage.includes('整理')) {
     return '削除・整理';
-  } else if (lowerMessage.includes('docs') || lowerMessage.includes('ドキュメント') || lowerMessage.includes('readme')) {
+  } else if (lowerMessage.includes('docs') || lowerMessage.includes('documentation') || 
+             lowerMessage.includes('ドキュメント') || lowerMessage.includes('readme') ||
+             translatedMessage.includes('ドキュメント')) {
     return 'ドキュメント';
   } else {
     return 'その他';
@@ -92,7 +173,7 @@ function generateChangeHistory(commits) {
   const categories = {
     '機能追加': [],
     'バグ修正': [],
-    '更新': [],
+    '機能更新': [],
     'リファクタリング': [],
     '削除・整理': [],
     'ドキュメント': [],
@@ -101,7 +182,12 @@ function generateChangeHistory(commits) {
 
   // コミットを分類
   commits.forEach(commitLine => {
-    const [hash, author, date, message] = commitLine.split('|');
+    // パイプ文字で分割（メッセージ部分にパイプが含まれる可能性があるため、最初の3つだけ分割）
+    const parts = commitLine.split('|');
+    const hash = parts[0];
+    const author = parts[1];
+    const date = parts[2];
+    const message = parts.slice(3).join('|'); // 残りの部分を結合してメッセージとして扱う
     const category = categorizeChange(message);
     const dateOnly = date.split('T')[0];
     
@@ -114,6 +200,7 @@ function generateChangeHistory(commits) {
       author,
       date: dateOnly,
       message,
+      translatedMessage: translateCommitMessage(message),
       category
     });
     
@@ -137,7 +224,12 @@ function generateChangeHistory(commits) {
           }).join('\n') + (files.length > 10 ? `\n  - ...他${files.length - 10}ファイル` : '')
         : '';
       
-      history += `#### ${commit.category}: ${commit.message}\n\n`;
+      // コミットメッセージが英語の場合は日本語化したバージョンも表示
+      const displayMessage = commit.translatedMessage !== commit.message 
+        ? `${commit.translatedMessage} (${commit.message})`
+        : commit.message;
+      
+      history += `#### ${commit.category}: ${displayMessage}\n\n`;
       history += `- **作成者**: ${commit.author}\n`;
       history += `- **コミット**: \`${commit.hash}\`\n`;
       if (fileList) {
@@ -155,7 +247,8 @@ function generateDevelopers(commits) {
   const developers = new Set();
   
   commits.forEach(commitLine => {
-    const [, author] = commitLine.split('|');
+    const parts = commitLine.split('|');
+    const author = parts[1]; // 2番目の要素が作成者
     if (author) {
       developers.add(author);
     }
@@ -180,8 +273,148 @@ function updateRequirements() {
     return;
   }
 
-  // REQUIREMENTS.mdを読み込む
-  let requirementsContent = fs.readFileSync(REQUIREMENTS_FILE, 'utf-8');
+  // REQUIREMENTS.mdを読み込む（存在しない場合はテンプレートを使用）
+  let requirementsContent;
+  if (fs.existsSync(REQUIREMENTS_FILE)) {
+    requirementsContent = fs.readFileSync(REQUIREMENTS_FILE, 'utf-8');
+  } else {
+    // 初回実行時はテンプレートを使用
+    requirementsContent = `# 📋 要件定義書 - Smail Email Client
+
+> **最終更新日**: 未更新
+> **プロジェクト名**: Smail - Modern Email Client  
+> **バージョン**: 1.0.0
+
+---
+
+## 📖 プロジェクト概要
+
+Next.js + TypeScript + Tailwind CSSで構築されたモダンなメールクライアントアプリケーション。  
+JWT認証とハイブリッドストレージ（MongoDB + ファイルシステム）を採用したセキュアなメール管理システム。
+
+---
+
+## 🎯 主な機能
+
+### 認証機能
+- ✅ ログイン/ログアウト
+- ✅ JWT トークンベースの認証
+- ✅ 認証ガードによる保護されたルート
+- ✅ デモアカウント（\`demo@example.com\` / \`password\`）
+
+### メール管理機能
+- ✅ **受信トレイ** - 受信メールの一覧表示、未読/既読管理
+- ✅ **送信済み** - 送信したメールの履歴
+- ✅ **下書き** - 作成途中のメールを保存
+- ✅ **メール作成** - 新規メールの作成と送信
+- ✅ **迷惑メール** - スパムフィルタで検出されたメール
+- ✅ **統計** - メール送受信の統計情報を視覚化
+
+### UI/UX機能
+- ✅ 赤・黄色・白を基調とした独自のカラーパレット
+- ✅ リッチで使いやすいモダンなデザイン
+- ✅ Inter + Noto Sans JP フォントによる読みやすい表示
+- ✅ スムーズなグラデーションとホバーエフェクト
+- ✅ レスポンシブなサイドバーナビゲーション
+
+---
+
+## 🛠️ 技術スタック
+
+### フロントエンド
+- **Next.js 15.5.3** - Reactフレームワーク
+- **TypeScript** - 型安全性
+- **Tailwind CSS** - ユーティリティファーストCSS
+- **shadcn/ui** - UIコンポーネントライブラリ
+- **Radix UI** - アクセシブルなUIプリミティブ
+- **Lucide React** - アイコンライブラリ
+- **Axios** - HTTPクライアント
+
+### バックエンド
+- **Node.js** - サーバーランタイム
+- **Express** - Webフレームワーク
+- **MongoDB** - データベース
+- **JWT** - 認証トークン
+- **Bcrypt** - パスワードハッシュ化
+
+---
+
+## 📂 プロジェクト構造
+
+\`\`\`
+Mail-server/
+├── app/                          # Next.js App Router
+│   ├── (authenticated)/          # 認証が必要なページ
+│   │   ├── inbox/                # 受信トレイ
+│   │   ├── sent/                 # 送信済み
+│   │   ├── drafts/               # 下書き
+│   │   ├── compose/              # メール作成
+│   │   ├── spam/                 # 迷惑メール
+│   │   ├── statistics/           # 統計
+│   │   └── layout.tsx            # 認証済みレイアウト
+│   ├── login/                    # ログインページ
+│   └── layout.tsx                # ルートレイアウト
+├── components/                   # Reactコンポーネント
+│   ├── ui/                       # shadcn/uiコンポーネント
+│   ├── TopBar.tsx                # トップバー
+│   ├── Sidebar.tsx               # サイドバー
+│   ├── MailItem.tsx              # メールアイテム
+│   └── AuthGuard.tsx             # 認証ガード
+├── lib/                          # ユーティリティ
+│   └── utils.ts                  # 共通関数
+├── backend/                      # バックエンドサーバー
+│   ├── server.js                 # Expressサーバー
+│   ├── hybridMailService.js      # ハイブリッドメールサービス
+│   ├── mongoMailService.js       # MongoDBメールサービス
+│   └── twoFactorAuth.js          # 二段階認証
+└── scripts/                      # スクリプト
+    └── update-requirements.js    # 要件定義書更新スクリプト
+\`\`\`
+
+---
+
+## 📝 変更履歴
+
+### 未更新
+
+要件定義書はまだ更新されていません。  
+\`npm run update-requirements\` を実行するか、Cursor Chatで「更新」と入力して更新してください。
+
+---
+
+## 🚀 次のステップ
+
+### 最重要
+- [ ] 要件定義書の初回更新を実行
+
+### 優先度：高
+- [ ] 機能追加の検討
+- [ ] パフォーマンス最適化
+
+### 優先度：中
+- [ ] テストコードの追加
+- [ ] ドキュメントの充実
+
+### 優先度：低
+- [ ] UI/UXの改善
+- [ ] アクセシビリティの向上
+
+---
+
+## 👥 開発メンバー
+
+- プロジェクトメンバー情報はGitコミット履歴から自動的に取得されます
+
+---
+
+## 📌 注意事項
+
+- この要件定義書は \`npm run update-requirements\` コマンドで自動更新されます
+- 手動で編集する場合は、変更履歴セクションを適切に更新してください
+- Gitで管理されているため、チーム全体で共有・更新できます
+`;
+    console.log('📄 REQUIREMENTS.mdが見つかりませんでした。テンプレートから作成します。\n');
+  }
 
   // 最終更新日時を更新
   const updateTime = saveLastUpdateTime();

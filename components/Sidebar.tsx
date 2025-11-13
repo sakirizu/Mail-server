@@ -82,7 +82,7 @@ export default function Sidebar() {
   }, [pathname]);
 
   return (
-    <aside className="fixed left-0 top-16 bottom-0 w-64 border-r border-[var(--border)] bg-gradient-to-b from-white via-[rgba(255,245,235,0.7)] to-white/95 backdrop-blur-sm overflow-y-auto">
+    <aside className="fixed left-0 top-16 bottom-0 w-64 shadow-[2px_0_16px_rgba(0,0,0,0.05)] dark:shadow-[2px_0_16px_rgba(0,0,0,0.4)] bg-gradient-to-b from-white via-[rgba(255,245,235,0.7)] to-white/95 dark:from-dark-700 dark:via-dark-600 dark:to-dark-700/95 backdrop-blur-sm overflow-y-auto transition-theme">
       <div className="p-5 space-y-2">
         {menuItems.map((item) => {
           const Icon = item.icon;
@@ -94,25 +94,25 @@ export default function Sidebar() {
               key={item.id}
               onClick={() => router.push(item.path)}
               className={cn(
-                "w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-all shadow-soft/0",
+                "w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-medium transition-all",
                 isActive
-                  ? "bg-primary-50/90 text-primary-700 shadow-soft hover:translate-x-1"
-                  : "text-gray-700 hover:bg-amber-50/80 hover:text-primary-600"
+                  ? "bg-primary-50/90 dark:bg-dark-400 text-primary-700 dark:text-primary-400 shadow-soft dark:shadow-dark-soft hover:translate-x-1 dark:glow-primary"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-amber-50/80 dark:hover:bg-dark-400 hover:text-primary-600 dark:hover:text-primary-400 hover:shadow-soft dark:hover:shadow-dark-soft"
               )}
             >
               <div
                 className={cn(
-                  "h-9 w-9 rounded-lg flex items-center justify-center border border-transparent",
+                  "h-9 w-9 rounded-lg flex items-center justify-center border",
                   isActive
-                    ? "bg-gradient-to-br from-primary-500 to-amber-400 text-white shadow-medium"
-                    : "bg-white text-gray-500 border-[var(--border)]"
+                    ? "bg-gradient-to-br from-primary-500 to-amber-400 text-white shadow-medium dark:shadow-glow-red border-transparent"
+                    : "bg-white dark:bg-dark-500 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-dark-300"
                 )}
               >
                 <Icon className="h-4 w-4" />
               </div>
               <span className="flex-1 text-left">{item.name}</span>
               {count && count > 0 && (
-                <span className="px-2.5 py-0.5 text-xs font-semibold text-white bg-primary-500 rounded-full shadow-soft">
+                <span className="px-2.5 py-0.5 text-xs font-semibold text-white bg-primary-500 dark:bg-primary-400 rounded-full shadow-soft dark:shadow-glow-red">
                   {count}
                 </span>
               )}
@@ -121,20 +121,20 @@ export default function Sidebar() {
         })}
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-[var(--border)] bg-white/80 backdrop-blur-sm space-y-1.5">
+      <div className="absolute bottom-0 left-0 right-0 p-4 shadow-[0_-4px_16px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_16px_rgba(0,0,0,0.3)] bg-white/80 dark:bg-dark-600/90 backdrop-blur-sm space-y-1.5 transition-theme">
         <button
-          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-amber-50/70 hover:text-primary-600 transition-colors"
+          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-amber-50/70 dark:hover:bg-dark-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
         >
-          <div className="h-9 w-9 rounded-lg border border-[var(--border)] bg-white flex items-center justify-center">
-            <HelpCircle className="h-4 w-4 text-gray-500" />
+          <div className="h-9 w-9 rounded-lg border border-gray-200 dark:border-dark-300 bg-white dark:bg-dark-500 flex items-center justify-center">
+            <HelpCircle className="h-4 w-4 text-gray-500 dark:text-gray-400" />
           </div>
           <span className="flex-1 text-left">ヘルプとサポート</span>
         </button>
         <button
-          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-amber-50/70 hover:text-primary-600 transition-colors"
+          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-amber-50/70 dark:hover:bg-dark-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
         >
-          <div className="h-9 w-9 rounded-lg border border-[var(--border)] bg-white flex items-center justify-center">
-            <Settings className="h-4 w-4 text-gray-500" />
+          <div className="h-9 w-9 rounded-lg border border-gray-200 dark:border-dark-300 bg-white dark:bg-dark-500 flex items-center justify-center">
+            <Settings className="h-4 w-4 text-gray-500 dark:text-gray-400" />
           </div>
           <span className="flex-1 text-left">設定</span>
         </button>

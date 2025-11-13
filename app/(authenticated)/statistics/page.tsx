@@ -24,16 +24,16 @@ export default function StatisticsPage() {
   const activity = useMemo(() => demoDailyActivity, []);
 
   return (
-    <div className="flex-1 bg-gradient-to-br from-white via-[rgba(255,244,235,0.7)] to-white overflow-y-auto">
-      <div className="px-8 py-5 border-b border-[var(--border)] bg-white/80 backdrop-blur-sm flex items-center gap-4">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-amber-400 text-white flex items-center justify-center shadow-soft">
+    <div className="flex-1 overflow-y-auto">
+      <div className="px-8 py-5 border-b dark:border-dark-200 bg-white/80 dark:bg-dark-600/80 backdrop-blur-sm shadow-sm dark:shadow-dark-soft flex items-center gap-4 transition-theme">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-amber-400 text-white flex items-center justify-center shadow-soft dark:shadow-glow-red">
           <BarChart3 className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-2xl font-semibold text-[var(--foreground)] tracking-tight">
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
             メール統計
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Smail を利用した最近のアクティビティの概要
           </p>
         </div>
@@ -69,19 +69,19 @@ export default function StatisticsPage() {
           ].map((card) => (
             <div
               key={card.title}
-              className="rounded-3xl border border-[var(--border)] bg-white p-5 shadow-soft"
+              className="rounded-3xl bg-white dark:bg-dark-500 p-5 shadow-soft dark:shadow-dark-soft transition-all"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                  <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                     {card.title}
                   </p>
-                  <p className="text-2xl font-semibold text-gray-900 mt-2">
+                  <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mt-2">
                     {card.value}
                   </p>
                 </div>
                 <div
-                  className={`w-11 h-11 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center text-white`}
+                  className={`w-11 h-11 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center text-white shadow-soft dark:shadow-glow-red`}
                 >
                   <card.icon className="h-5 w-5" />
                 </div>
@@ -90,11 +90,11 @@ export default function StatisticsPage() {
           ))}
         </div>
 
-        <div className="rounded-3xl border border-[var(--border)] bg-white p-6 shadow-soft">
-          <h2 className="text-lg font-semibold text-gray-900">
+        <div className="rounded-3xl bg-white dark:bg-dark-500 p-6 shadow-soft dark:shadow-dark-soft transition-all">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             日別の送受信状況
           </h2>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
             過去7日間の送信・受信の件数
           </p>
 
@@ -110,7 +110,7 @@ export default function StatisticsPage() {
             ))}
           </div>
 
-          <div className="mt-6 flex items-center gap-6 text-xs text-gray-500">
+          <div className="mt-6 flex items-center gap-6 text-xs text-gray-500 dark:text-gray-400">
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-primary-500/80"></span>
               <span>送信件数</span>

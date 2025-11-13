@@ -1,6 +1,6 @@
 # 📋 要件定義書 - Smail Email Client
 
-> **最終更新日**: 2025/11/13 12:13
+> **最終更新日**: 2025/11/13 12:32
 > **プロジェクト名**: Smail - Modern Email Client  
 > **バージョン**: 1.0.0
 
@@ -94,118 +94,19 @@ Mail-server/
 
 ## 📝 変更履歴
 
-### 2025-11-13 11:53:12 +0900
+### 2025-11-13 12:19:28 +0900
 
-#### 機能追加: Add guide for updating project to latest version
-
-- **作成者**: twichill
-- **コミット**: `b199bf4`
-- **変更ファイル**:
-  - ➕ `HOW_TO_UPDATE.md`
-
-### 2025-11-13 11:49:28 +0900
-
-#### 機能追加: Add beginner-friendly Git/GitHub guides
+#### 機能更新: 更新 .gitignore, パッケージ.json, と README の requirements tracking 機能 (Update .gitignore, package.json, and README for requirements tracking feature)
 
 - **作成者**: twichill
-- **コミット**: `d63c776`
+- **コミット**: `30f7f2e`
 - **変更ファイル**:
-  - ➕ `GITHUB_GUIDE_FOR_BEGINNERS.md`
-  - ➕ `GIT_CHEAT_SHEET.md`
-
-### 2025-11-13 11:44:46 +0900
-
-#### その他: Migrate to Next.js with custom red/yellow design
-
-- **作成者**: twichill
-- **コミット**: `f32a7ca`
-- **変更ファイル**:
-  - ➕ `.eslintrc.json`
+  - ➕ `.cursor/rules/000_global.mdc`
   - ✏️ `.gitignore`
-  - 🗑️ `App.js`
-  - ➕ `QUICK_START.md`
   - ✏️ `README.md`
-  - 🗑️ `app.json`
-  - ➕ `app/(authenticated)/compose/page.tsx`
-  - ➕ `app/(authenticated)/drafts/page.tsx`
-  - ➕ `app/(authenticated)/inbox/page.tsx`
-  - ➕ `app/(authenticated)/layout.tsx`
-  - ...他66ファイル
-
-### 2025-11-06 11:54:58 +0900
-
-#### その他: Hi everyone
-
-- **作成者**: twichill
-- **コミット**: `4230c5c`
-- **変更ファイル**:
-  - ➕ `src/hi.html`
-
-### 2025-11-06 05:45:16 +0000
-
-#### その他: hello
-
-- **作成者**: g024c1518-bit
-- **コミット**: `016d1e2`
-- **変更ファイル**:
-  - ➕ `src/hello.html`
-
-### 2025-10-28 12:23:11 +0900
-
-#### 削除・整理: Clean up: Remove unnecessary server and config files
-
-- **作成者**: sakiri
-- **コミット**: `0d5fef7`
-- **変更ファイル**:
-  - 🗑️ `ANDROID_UI_UX_SUMMARY.md`
-  - 🗑️ `DELETE_ACCOUNT_FIXES.md`
-  - 🗑️ `DEVICE_SECURITY_IMPROVEMENTS.md`
-  - 🗑️ `DOCKER_MONGODB_COMMANDS.md`
-  - 🗑️ `MAIL_SERVER_README.md`
-  - 🗑️ `MONGODB_SETUP_README.md`
-  - 🗑️ `NATIVEWIND_SETUP.md`
-  - 🗑️ `backend/2FA_README.md`
-  - 🗑️ `backend/2fa_schema.sql`
-  - 🗑️ `backend/add-test-user.sql`
-  - ...他19ファイル
-
-### 2025-10-28 12:17:56 +0900
-
-#### 削除・整理: Clean up: Remove unnecessary files
-
-- **作成者**: sakiri
-- **コミット**: `53f5b4b`
-- **変更ファイル**:
-  - 🗑️ `App-Anonymous.js`
-  - 🗑️ `App_backup.js`
-  - 🗑️ `backend/globalMailService.js`
-  - 🗑️ `backend/mailService_backup.js`
-  - 🗑️ `backend/mailService_mongodb.js`
-  - 🗑️ `backend/mailService_new.js`
-  - 🗑️ `backend/schema-Anonymous.sql`
-  - 🗑️ `backend/server-Anonymous.js`
-  - 🗑️ `backend/test-email.json`
-  - 🗑️ `backend/test-mail.js`
-  - ...他26ファイル
-
-### 2025-10-23 14:27:14 +0900
-
-#### その他: Initial commit: Mail server with beautiful Japanese UI
-
-- **作成者**: sakiri
-- **コミット**: `593d14a`
-- **変更ファイル**:
-  - ➕ `.gitignore`
-  - ➕ `ANDROID_UI_UX_SUMMARY.md`
-  - ➕ `App-Anonymous.js`
-  - ➕ `App.js`
-  - ➕ `App_backup.js`
-  - ➕ `DELETE_ACCOUNT_FIXES.md`
-  - ➕ `DEVICE_SECURITY_IMPROVEMENTS.md`
-  - ➕ `DOCKER_MONGODB_COMMANDS.md`
-  - ➕ `MAIL_SERVER_README.md`
-  - ➕ `MONGODB_SETUP_README.md`
-  - ...他111ファイル
+  - ➕ `REQUIREMENTS.md`
+  - ✏️ `package.json`
+  - ➕ `scripts/update-requirements.js`
 
 
 
@@ -232,9 +133,7 @@ Mail-server/
 
 ## 👥 開発メンバー
 
-- **sakiri**
 - **twichill**
-- **g024c1518-bit**
 
 ---
 

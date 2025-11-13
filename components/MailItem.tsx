@@ -78,19 +78,19 @@ export default function MailItem({ mail, onPress, onRead }: MailItemProps) {
     <button
       onClick={handleClick}
       className={`
-        group w-full flex items-start gap-4 rounded-2xl px-5 py-4 border text-left transition-all
+        group w-full flex items-start gap-4 rounded-2xl px-5 py-4 text-left transition-all
         ${isUnread
-          ? "border-primary-200 bg-primary-50/80 shadow-soft"
-          : "border-transparent bg-white hover:border-amber-200 hover:shadow-soft"}
+          ? "bg-primary-50/80 dark:bg-dark-400 shadow-medium dark:shadow-dark-medium dark:shadow-glow-red"
+          : "bg-white dark:bg-dark-500 shadow-soft dark:shadow-dark-soft hover:shadow-medium dark:hover:shadow-dark-medium hover:scale-[1.01]"}
       `}
     >
       {/* Avatar */}
       <div className="flex-shrink-0">
         <div
-          className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-soft ${
+          className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
             isUnread
-              ? "bg-gradient-to-br from-primary-500 to-amber-400 text-white"
-              : "bg-amber-50 text-primary-600"
+              ? "bg-gradient-to-br from-primary-500 to-amber-400 text-white shadow-soft dark:shadow-glow-red"
+              : "bg-amber-50 dark:bg-dark-300 text-primary-600 dark:text-primary-400 shadow-soft dark:shadow-dark-soft"
           }`}
         >
           <span className="text-sm font-semibold tracking-wide">
@@ -104,13 +104,15 @@ export default function MailItem({ mail, onPress, onRead }: MailItemProps) {
         {/* Sender and Time */}
         <div className="flex items-center justify-between mb-1">
           <span
-            className={`text-sm flex-1 truncate ${
-              isUnread ? "font-semibold text-gray-900" : "font-medium text-gray-800"
+            className={`text-sm flex-1 truncate transition-colors ${
+              isUnread 
+                ? "font-semibold text-gray-900 dark:text-gray-100" 
+                : "font-medium text-gray-800 dark:text-gray-200"
             }`}
           >
             {mail.sender}
           </span>
-          <span className="text-xs text-gray-400 ml-4 flex-shrink-0">
+          <span className="text-xs text-gray-400 dark:text-gray-500 ml-4 flex-shrink-0">
             {formatTimeAgo(mail.created_at || mail.date)}
           </span>
         </div>
@@ -119,15 +121,15 @@ export default function MailItem({ mail, onPress, onRead }: MailItemProps) {
         <div
           className={`text-sm mb-1 truncate transition-colors ${
             isUnread
-              ? "font-semibold text-gray-900"
-              : "font-semibold text-gray-800 group-hover:text-primary-600"
+              ? "font-semibold text-gray-900 dark:text-gray-100"
+              : "font-semibold text-gray-800 dark:text-gray-200 group-hover:text-primary-600 dark:group-hover:text-primary-400"
           }`}
         >
           {mail.subject}
         </div>
 
         {/* Snippet */}
-        <div className="text-xs text-gray-500 leading-5 line-clamp-2">
+        <div className="text-xs text-gray-500 dark:text-gray-400 leading-5 line-clamp-2">
           {mail.snippet || mail.body || "No preview available"}
         </div>
       </div>

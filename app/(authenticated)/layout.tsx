@@ -44,11 +44,11 @@ export default function AuthenticatedLayout({
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[var(--background)] text-[var(--foreground)]">
+    <div className="flex flex-col h-screen bg-gradient-to-br from-gray-50 via-white to-amber-50/30 dark:from-dark-900 dark:via-dark-800 dark:to-dark-900 text-gray-900 dark:text-gray-100 transition-theme">
       <TopBar />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 overflow-y-auto ml-64">
+        <main className="flex-1 overflow-y-auto ml-64 p-6">
           {children}
         </main>
       </div>

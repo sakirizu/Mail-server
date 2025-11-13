@@ -43,18 +43,18 @@ export default function SentPage() {
   const mails = useMemo(() => demoSentMails, []);
 
   return (
-    <div className="flex-1 bg-gradient-to-br from-white via-[rgba(255,244,235,0.7)] to-white">
-      <div className="px-8 py-5 border-b border-[var(--border)] bg-white/80 backdrop-blur-sm">
+    <div className="flex-1">
+      <div className="px-8 py-5 border-b dark:border-dark-200 bg-white/80 dark:bg-dark-600/80 backdrop-blur-sm shadow-sm dark:shadow-dark-soft transition-theme">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-amber-400 shadow-soft flex items-center justify-center text-white font-semibold">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-amber-400 shadow-soft dark:shadow-glow-red flex items-center justify-center text-white font-semibold">
               OUT
             </div>
             <div>
-              <h1 className="text-2xl font-semibold text-[var(--foreground)] tracking-tight">
+              <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
                 送信済み
               </h1>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 最近送信したメッセージ
               </p>
             </div>

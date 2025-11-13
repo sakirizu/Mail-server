@@ -27,6 +27,29 @@
     --ring: 6 86% 55%;
     --radius: 0.5rem;
   }
+
+  .dark {
+    --background: 0 0% 4%; /* #0A0A0A - リッチな黒 */
+    --foreground: 0 0% 95%;
+    --card: 0 0% 6%; /* #0F0F0F */
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 5%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 6 86% 60%; /* より明るい赤 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 43 92% 65%; /* より明るい黄色 */
+    --secondary-foreground: 0 0% 10%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 0 0% 10%;
+    --accent-foreground: 6 86% 60%;
+    --destructive: 0 82% 56%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 6 86% 60%;
+    --radius: 0.5rem;
+  }
 }
 
 @layer base {
@@ -35,6 +58,32 @@
   }
   body {
     @apply bg-background text-foreground antialiased font-sans;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+}
+
+/* ダークモード用のスムーズな遷移 */
+@layer utilities {
+  .transition-theme {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  /* グロー効果 */
+  .glow-primary {
+    box-shadow: 0 0 20px rgba(242, 71, 50, 0.4);
+  }
+  
+  .glow-secondary {
+    box-shadow: 0 0 20px rgba(255, 157, 26, 0.4);
+  }
+  
+  /* ダークモード専用のグラデーション */
+  .dark .bg-gradient-dark {
+    background: linear-gradient(135deg, #0F0F0F 0%, #1A1A1A 100%);
+  }
+  
+  .dark .bg-gradient-dark-card {
+    background: linear-gradient(135deg, #121212 0%, #1F1F1F 100%);
   }
 }
 
