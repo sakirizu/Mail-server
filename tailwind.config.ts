@@ -1,0 +1,100 @@
+import type { Config } from "tailwindcss";
+
+const config: Config = {
+  darkMode: ["class"],
+  content: [
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50: '#FFECEB',
+          100: '#FFD5D1',
+          200: '#FFB3AC',
+          300: '#FF8E84',
+          400: '#FF6B58',
+          500: '#F24732',
+          600: '#D33625',
+          700: '#A6271B',
+          800: '#7A1A13',
+          900: '#4E0E0A',
+        },
+        amber: {
+          50: '#FFF8EB',
+          100: '#FFECC2',
+          200: '#FFD38A',
+          300: '#FFB84D',
+          400: '#FF9D1A',
+          500: '#EB7F00',
+          600: '#CC6600',
+          700: '#A34D00',
+          800: '#7A3600',
+          900: '#4E2100',
+        },
+        sand: {
+          50: '#FBF9F3',
+          100: '#F6F1E6',
+          200: '#EDE3CC',
+          300: '#E2D5B3',
+          400: '#D4C79A',
+          500: '#B6AA7B',
+          600: '#938861',
+          700: '#71674A',
+          800: '#4E4733',
+          900: '#2C291D',
+        },
+        gray: {
+          50: '#FAFAFA',
+          100: '#F4F4F5',
+          200: '#E5E7EB',
+          300: '#D4D4D8',
+          400: '#A1A1AA',
+          500: '#71717A',
+          600: '#52525B',
+          700: '#3F3F46',
+          800: '#27272A',
+          900: '#18181B',
+        },
+        success: '#33A36F',
+        warning: '#FF9D1A',
+        error: '#F24732',
+        accent: '#FBEAEC',
+        border: '#E5E7EB',
+        input: '#E5E7EB',
+        ring: '#F24732',
+        background: '#FFFFFF',
+        foreground: '#18181B',
+      },
+      borderRadius: {
+        lg: '12px',
+        md: '8px',
+        sm: '6px',
+      },
+      fontFamily: {
+        sans: [
+          '"Noto Sans JP"',
+          '"Inter"',
+          'system-ui',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'Roboto',
+          'sans-serif',
+        ],
+      },
+      boxShadow: {
+        'soft': '0 4px 12px rgba(214, 83, 46, 0.05)',
+        'medium': '0 8px 24px rgba(214, 83, 46, 0.12)',
+        'large': '0 14px 32px rgba(214, 83, 46, 0.16)',
+        'xl': '0 20px 48px rgba(214, 83, 46, 0.20)',
+      },
+    },
+  },
+  plugins: [require("tailwindcss-animate")],
+};
+
+export default config;
+

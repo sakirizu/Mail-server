@@ -59,3 +59,11 @@ backend/package-lock.json
 
 # Build
 build/
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+
+# TypeScript
+*.tsbuildinfo
