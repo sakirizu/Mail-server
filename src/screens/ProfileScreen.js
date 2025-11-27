@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, ScrollView, Dimensions, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
 import { useAuth } from '../context/AuthContext';
 
@@ -104,7 +105,7 @@ const ProfileScreen = ({ navigation }) => {
             onPress={() => navigation?.goBack()}
             activeOpacity={0.7}
           >
-            <Text style={styles.backIcon}>←</Text>
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>プロフィール</Text>
         </View>
@@ -125,14 +126,18 @@ const ProfileScreen = ({ navigation }) => {
             onPress={() => navigation?.goBack()}
             activeOpacity={0.7}
           >
-            <Text style={styles.backIcon}>←</Text>
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>プロフィール</Text>
         </View>
         <View style={styles.center}>
-          <Text style={styles.error}>⚠️ {error}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+            <Ionicons name="warning" size={24} color="#FF3B30" style={{ marginRight: 8 }} />
+            <Text style={styles.error}>{error}</Text>
+          </View>
           <TouchableOpacity style={styles.retryBtn} onPress={() => window.location.reload()}>
-            <Text style={styles.retryBtnText}>🔄 再試行</Text>
+            <Ionicons name="sync" size={18} color="#fff" style={{ marginRight: 6 }} />
+            <Text style={styles.retryBtnText}>再試行</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -214,10 +219,12 @@ const ProfileScreen = ({ navigation }) => {
                     isSmallPhone && styles.editActionsSmall
                   ]}>
                     <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
-                      <Text style={styles.saveBtnText}>{saving ? '⏳' : '✓'} {saving ? '保存中' : '保存'}</Text>
+                      <Ionicons name={saving ? "time" : "checkmark"} size={18} color="#fff" style={{ marginRight: 6 }} />
+                      <Text style={styles.saveBtnText}>{saving ? '保存中' : '保存'}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.cancelBtn} onPress={() => { setEditing(false); setName(profile.name); }}>
-                      <Text style={styles.cancelBtnText}>✕ キャンセル</Text>
+                      <Ionicons name="close" size={18} color="#fff" style={{ marginRight: 6 }} />
+                      <Text style={styles.cancelBtnText}>キャンセル</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -225,13 +232,16 @@ const ProfileScreen = ({ navigation }) => {
                 <>
                   <Text style={styles.userName}>{profile.name}</Text>
                   <Text style={styles.userEmail}>{profile.email}</Text>
-                  <Text style={styles.accountType}>📧 プロフェッショナルアカウント</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="mail" size={16} color={colors.primary} style={{ marginRight: 6 }} />
+                    <Text style={styles.accountType}>プロフェッショナルアカウント</Text>
+                  </View>
                 </>
               )}
             </View>
             {!editing && (
               <TouchableOpacity style={styles.editProfileBtn} onPress={() => setEditing(true)}>
-                <Text style={styles.editIcon}>✏️</Text>
+                <Ionicons name="create" size={20} color={colors.primary} />
               </TouchableOpacity>
             )}
           </View>

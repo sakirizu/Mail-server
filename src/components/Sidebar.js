@@ -1,7 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Animated, Modal, ScrollView, Switch, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config/api';
 
 // Modern content wrapper with dynamic margin - Platform optimized
 export const MainContentWrapper = ({ children, collapsed, isMobile, sidebarVisible = false }) => (
@@ -9,14 +12,14 @@ export const MainContentWrapper = ({ children, collapsed, isMobile, sidebarVisib
     styles.mainContent,
     isMobile 
       ? { 
-          marginLeft: 0,        // No margin on mobile - content stays in place
-          width: '100%',        // Full width on mobile
-          paddingTop: Platform.OS === 'android' ? 97 : 60,      // Android'da 97px (27+70), web'da 60px
-          opacity: (isMobile && sidebarVisible) ? 0.3 : 1, // Dim content when sidebar is open
+          marginLeft: 0,
+          width: '100%',
+          paddingTop: Platform.OS === 'android' ? 97 : Platform.OS === 'ios' ? 110 : 60,
+          opacity: (isMobile && sidebarVisible) ? 0.3 : 1,
         } 
       : { 
-          marginLeft: collapsed ? 64 : 240,  // Desktop: 64px collapsed, 240px expanded
-          paddingTop: Platform.OS === 'android' ? 107 : 72,      // Android'da 107px (27+70+10), web'da 72px
+          marginLeft: collapsed ? 72 : 240,
+          paddingTop: Platform.OS === 'android' ? 107 : Platform.OS === 'ios' ? 110 : 72,
         }
   ]}>
     {children}
@@ -31,6 +34,8 @@ const Sidebar = ({ onNavigate, collapsed = false, isVisible = false, isMobile = 
   const [activeScreen, setActiveScreen] = React.useState('Inbox');
   const [settingsModalVisible, setSettingsModalVisible] = React.useState(false);
   const [unreadCount, setUnreadCount] = React.useState(0);
+  const [draftCount, setDraftCount] = React.useState(0);
+  const [spamCount, setSpamCount] = React.useState(0);
   const [settings, setSettings] = React.useState({
     emailNotifications: true,
     readReceipts: true,
@@ -44,14 +49,49 @@ const Sidebar = ({ onNavigate, collapsed = false, isVisible = false, isMobile = 
   
   // Animated value for modal scale
   const scaleAnim = React.useRef(new Animated.Value(0)).current;
+
+  // Fetch mail counts
+  React.useEffect(() => {
+    const fetchCounts = async () => {
+      if (!user || !user.token) return;
+
+      try {
+        // Fetch drafts count
+        const draftsRes = await fetch(`${API_BASE_URL}/api/mails/drafts?limit=1`, {
+          headers: { 'Authorization': `Bearer ${user.token}` }
+        });
+        if (draftsRes.ok) {
+          const draftsData = await draftsRes.json();
+          setDraftCount(draftsData.totalCount || 0);
+        }
+
+        // Fetch spam count
+        const spamRes = await fetch(`${API_BASE_URL}/api/mails/spam?limit=1`, {
+          headers: { 'Authorization': `Bearer ${user.token}` }
+        });
+        if (spamRes.ok) {
+          const spamData = await spamRes.json();
+          setSpamCount(spamData.totalCount || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching mail counts:', error);
+      }
+    };
+
+    fetchCounts();
+    // Refresh counts every 30 seconds
+    const interval = setInterval(fetchCounts, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
   
-  // Animate sidebar slide in/out from left
+  // Animate sidebar slide in/out from left with spring animation
   React.useEffect(() => {
     if (isMobile) {
-      Animated.timing(slideAnim, {
-        toValue: isVisible ? 0 : -280, // 0 visible, -280 hidden (slides from left)
-        duration: 300,
-        useNativeDriver: true, // Use native driver for better performance
+      Animated.spring(slideAnim, {
+        toValue: isVisible ? 0 : -280,
+        tension: 65,
+        friction: 9,
+        useNativeDriver: true,
       }).start();
     }
   }, [isVisible, isMobile, slideAnim]);
@@ -141,47 +181,55 @@ const Sidebar = ({ onNavigate, collapsed = false, isVisible = false, isMobile = 
     return () => clearInterval(interval);
   }, [user]);
 
-  // Menu items configuration
+  // Menu items configuration with modern outline-style icons
   const menuItems = [
     { 
       id: 'inbox',
       name: '受信トレイ', 
-      icon: '📧', 
+      iconType: 'Ionicons',
+      iconName: 'mail-outline',
+      iconNameActive: 'mail',
       screen: 'Inbox',
-      count: unreadCount // Show unread count for Inbox in sidebar
+      count: unreadCount,
+      color: '#007AFF'
     },
     { 
       id: 'sent',
       name: '送信済み', 
-      icon: '📤', 
-      screen: 'Sent'
-      // No count for sent items as user requested
+      iconType: 'Ionicons',
+      iconName: 'paper-plane-outline',
+      iconNameActive: 'paper-plane',
+      screen: 'Sent',
+      color: '#007AFF'
     },
     { 
       id: 'compose',
       name: '新規作成', 
-      icon: '✏️', 
-      screen: 'Compose' 
+      iconType: 'Ionicons',
+      iconName: 'create-outline',
+      iconNameActive: 'create',
+      screen: 'Compose',
+      color: '#007AFF'
     },
     { 
       id: 'drafts',
       name: '下書き', 
-      icon: '📄', 
+      iconType: 'Ionicons',
+      iconName: 'document-text-outline',
+      iconNameActive: 'document-text',
       screen: 'Drafts',
-      count: 7 // Draft emails
+      count: draftCount,
+      color: '#8E8E93'
     },
     { 
       id: 'spam',
       name: '迷惑メール', 
-      icon: '🚫', 
+      iconType: 'Ionicons',
+      iconName: 'shield-outline',
+      iconNameActive: 'shield',
       screen: 'Spam',
-      count: 6 // Spam emails
-    },
-    { 
-      id: 'statistics',
-      name: '統計', 
-      icon: '📊', 
-      screen: 'Statistics'
+      count: spamCount,
+      color: '#FF3B30'
     }
   ];
 
@@ -212,74 +260,105 @@ const Sidebar = ({ onNavigate, collapsed = false, isVisible = false, isMobile = 
           ] : (collapsed ? styles.sidebarCollapsed : styles.sidebarExpanded)
         ]}>
         {/* Mobile header with logo */}
-        <View style={[styles.sidebarHeader, isMobile && styles.sidebarHeaderMobile]}>
+        <LinearGradient
+          colors={['#007AFF', '#0051D5']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.sidebarHeader, isMobile && styles.sidebarHeaderMobile]}
+        >
           <View style={styles.headerContent}>
             {isMobile ? (
               <View style={styles.logoContainer}>
-                <Text style={styles.logoText}>📧 Mail</Text>
+                <Ionicons name="mail" size={28} color="#fff" />
+                <Text style={styles.logoText}>SS Mail</Text>
               </View>
             ) : (
-              <Text style={styles.headerTitle}>Menu</Text>
+              <>
+                <Ionicons name="menu" size={24} color="#fff" />
+                <Text style={styles.headerTitle}>Menu</Text>
+              </>
             )}
           </View>
-        </View>
+        </LinearGradient>
         
         {/* Menu Items */}
         <View style={[styles.menuContainer, isMobile && styles.menuContainerMobile]}>
-          {menuItems.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={[
-                styles.menuItem,
-                activeScreen === item.screen && styles.menuItemActive,
-                (collapsed && !isMobile) && styles.menuItemCollapsed,
-                isMobile && styles.menuItemMobile
-              ]}
-              onPress={() => handleNavigation(item.screen)}
-              activeOpacity={0.6}
-              android_ripple={{ color: colors.primary + '20', borderless: false }}
-            >
-              {/* Icon Container */}
-              <View style={[
-                styles.iconContainer,
-                activeScreen === item.screen && styles.iconContainerActive,
-                (collapsed && !isMobile) && styles.iconContainerCollapsed,
-                isMobile && styles.iconContainerMobile
-              ]}>
-                <Text style={[
-                  styles.icon,
-                  activeScreen === item.screen && styles.iconActive,
-                  isMobile && styles.iconMobile
-                ]}>
-                  {item.icon}
-                </Text>
-                {/* Badge on icon when collapsed (desktop only) */}
-                {collapsed && !isMobile && item.count > 0 && (
-                  <View style={styles.badgeCollapsed}>
-                    <Text style={styles.badgeTextCollapsed}>{item.count}</Text>
-                  </View>
+          {menuItems.map((item) => {
+            const IconComponent = Ionicons;
+            const isActive = activeScreen === item.screen;
+            
+            return (
+              <TouchableOpacity
+                key={item.id}
+                style={[
+                  styles.menuItem,
+                  isActive && (!collapsed || isMobile) && styles.menuItemActive,
+                  (collapsed && !isMobile) && styles.menuItemCollapsed,
+                  isMobile && styles.menuItemMobile
+                ]}
+                onPress={() => handleNavigation(item.screen)}
+                activeOpacity={0.7}
+                android_ripple={{ color: item.color + '20', borderless: false }}
+              >
+                {isActive && (!collapsed || isMobile) && (
+                  <LinearGradient
+                    colors={[item.color + '20', item.color + '08']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={[StyleSheet.absoluteFill, { borderRadius: 50 }]}
+                  />
                 )}
-              </View>
-
-              {/* Label and Count - Show when expanded or on mobile */}
-              {(!collapsed || isMobile) && (
-                <View style={styles.labelContainer}>
-                  <Text style={[
-                    styles.label,
-                    activeScreen === item.screen && styles.labelActive,
-                    isMobile && styles.labelMobile
-                  ]}>
-                    {item.name}
-                  </Text>
-                  {item.count > 0 && (
-                    <View style={[styles.badge, isMobile && styles.badgeMobile]}>
-                      <Text style={[styles.badgeText, isMobile && styles.badgeTextMobile]}>{item.count}</Text>
-                    </View>
+                
+                {/* Icon Container */}
+                <View style={[
+                  styles.iconContainer,
+                  (collapsed && !isMobile) && styles.iconContainerCollapsed,
+                  isMobile && styles.iconContainerMobile
+                ]}>
+                  <IconComponent 
+                    name={isActive ? item.iconNameActive : item.iconName} 
+                    size={isMobile ? 24 : 22} 
+                    color={isActive ? item.color : '#8E8E93'} 
+                  />
+                  
+                  {/* Badge on icon when collapsed (desktop only) */}
+                  {collapsed && !isMobile && item.count > 0 && (
+                    <LinearGradient
+                      colors={['#FF3B30', '#FF6B30']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.badgeCollapsed}
+                    >
+                      <Text style={styles.badgeTextCollapsed}>{item.count}</Text>
+                    </LinearGradient>
                   )}
                 </View>
-              )}
-            </TouchableOpacity>
-          ))}
+
+                {/* Label and Count - Show when expanded or on mobile */}
+                {(!collapsed || isMobile) && (
+                  <View style={styles.labelContainer}>
+                    <Text style={[
+                      styles.label,
+                      isActive && styles.labelActive,
+                      isMobile && styles.labelMobile
+                    ]}>
+                      {item.name}
+                    </Text>
+                    {item.count > 0 && (
+                      <LinearGradient
+                        colors={['#FF3B30', '#FF6B30']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={[styles.badge, isMobile && styles.badgeMobile]}
+                      >
+                        <Text style={[styles.badgeText, isMobile && styles.badgeTextMobile]}>{item.count}</Text>
+                      </LinearGradient>
+                    )}
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {/* Footer at bottom */}
@@ -292,15 +371,15 @@ const Sidebar = ({ onNavigate, collapsed = false, isVisible = false, isMobile = 
               isMobile && styles.footerButtonMobile
             ]}
             onPress={() => handleHelpSupportNavigation('HelpSupport')}
-            activeOpacity={0.6}
-            android_ripple={{ color: colors.primary + '20', borderless: false }}
+            activeOpacity={0.7}
+            android_ripple={{ color: '#34C759' + '20', borderless: false }}
           >
             <View style={[
               styles.iconContainer,
               (collapsed && !isMobile) && styles.iconContainerCollapsed,
               isMobile && styles.iconContainerMobile
             ]}>
-              <Text style={[styles.icon, isMobile && styles.iconMobile]}>❓</Text>
+              <Ionicons name="help-circle-outline" size={isMobile ? 24 : 22} color="#34C759" />
             </View>
             {(!collapsed || isMobile) && (
               <Text style={[styles.footerText, isMobile && styles.footerTextMobile]}>ヘルプとサポート</Text>
@@ -315,15 +394,15 @@ const Sidebar = ({ onNavigate, collapsed = false, isVisible = false, isMobile = 
               isMobile && styles.footerButtonMobile
             ]}
             onPress={handleSettingsPress}
-            activeOpacity={0.6}
-            android_ripple={{ color: colors.primary + '20', borderless: false }}
+            activeOpacity={0.7}
+            android_ripple={{ color: '#8E8E93' + '20', borderless: false }}
           >
             <View style={[
               styles.iconContainer,
               (collapsed && !isMobile) && styles.iconContainerCollapsed,
               isMobile && styles.iconContainerMobile
             ]}>
-              <Text style={[styles.icon, isMobile && styles.iconMobile]}>⚙️</Text>
+              <Ionicons name="settings-outline" size={isMobile ? 24 : 22} color="#8E8E93" />
             </View>
             {(!collapsed || isMobile) && (
               <Text style={[styles.footerText, isMobile && styles.footerTextMobile]}>設定</Text>
@@ -349,12 +428,13 @@ const Sidebar = ({ onNavigate, collapsed = false, isVisible = false, isMobile = 
           ]}>
             {/* Modal Header */}
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>⚙️ 設定</Text>
+              <Ionicons name="settings" size={20} color={colors.primary} style={{ marginRight: 8 }} />
+              <Text style={styles.modalTitle}>設定</Text>
               <TouchableOpacity 
                 style={styles.closeButton}
                 onPress={() => setSettingsModalVisible(false)}
               >
-                <Text style={styles.closeButtonText}>✕</Text>
+                <Ionicons name="close" size={20} color={colors.text} />
               </TouchableOpacity>
             </View>
 
@@ -362,7 +442,10 @@ const Sidebar = ({ onNavigate, collapsed = false, isVisible = false, isMobile = 
             <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
               {/* Email Settings */}
               <View style={styles.settingsSection}>
-                <Text style={styles.sectionTitle}>📧 メール設定</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                  <Ionicons name="mail" size={18} color={colors.primary} style={{ marginRight: 8 }} />
+                  <Text style={styles.sectionTitle}>メール設定</Text>
+                </View>
                 
                 <View style={styles.settingItem}>
                   <View style={styles.settingInfo}>
@@ -450,33 +533,36 @@ const Sidebar = ({ onNavigate, collapsed = false, isVisible = false, isMobile = 
 
               {/* Quick Actions */}
               <View style={styles.settingsSection}>
-                <Text style={styles.sectionTitle}>🔧 クイックアクション</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                  <Ionicons name="construct" size={18} color={colors.primary} style={{ marginRight: 8 }} />
+                  <Text style={styles.sectionTitle}>クイックアクション</Text>
+                </View>
                 
                 <TouchableOpacity style={styles.actionItem}>
-                  <Text style={styles.actionIcon}>🗑️</Text>
+                  <Ionicons name="trash-outline" size={20} color={colors.text} style={{ marginRight: 12 }} />
                   <View style={styles.actionInfo}>
                     <Text style={styles.actionTitle}>キャッシュのクリア</Text>
                     <Text style={styles.actionDesc}>ストレージ容量を解放</Text>
                   </View>
-                  <Text style={styles.actionArrow}>→</Text>
+                  <Ionicons name="chevron-forward" size={20} color={colors.text} />
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.actionItem}>
-                  <Text style={styles.actionIcon}>📤</Text>
+                  <Ionicons name="cloud-upload-outline" size={20} color={colors.text} style={{ marginRight: 12 }} />
                   <View style={styles.actionInfo}>
                     <Text style={styles.actionTitle}>データのエクスポート</Text>
                     <Text style={styles.actionDesc}>メールをダウンロード</Text>
                   </View>
-                  <Text style={styles.actionArrow}>→</Text>
+                  <Ionicons name="chevron-forward" size={20} color={colors.text} />
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.actionItem}>
-                  <Text style={styles.actionIcon}>🔄</Text>
+                  <Ionicons name="sync-outline" size={20} color={colors.text} style={{ marginRight: 12 }} />
                   <View style={styles.actionInfo}>
                     <Text style={styles.actionTitle}>すべて更新</Text>
                     <Text style={styles.actionDesc}>すべてのメールアカウントを同期</Text>
                   </View>
-                  <Text style={styles.actionArrow}>→</Text>
+                  <Ionicons name="chevron-forward" size={20} color={colors.text} />
                 </TouchableOpacity>
               </View>
             </ScrollView>
@@ -486,7 +572,8 @@ const Sidebar = ({ onNavigate, collapsed = false, isVisible = false, isMobile = 
                 style={styles.doneButton}
                 onPress={() => setSettingsModalVisible(false)}
               >
-                <Text style={styles.doneButtonText}>✓ 完了</Text>
+                <Ionicons name="checkmark" size={20} color="#fff" style={{ marginRight: 8 }} />
+                <Text style={styles.doneButtonText}>完了</Text>
               </TouchableOpacity>
             </View>
           </Animated.View>
@@ -502,8 +589,8 @@ const styles = StyleSheet.create({
   sidebar: {
     position: 'absolute',
     left: 0,
-    top: Platform.OS === 'android' ? 97 : 60,           // Android'da 97px (27+70), web'da 60px
-    bottom: 0,          // Bottom gacha
+    top: Platform.OS === 'android' ? 97 : Platform.OS === 'ios' ? 110 : 60,
+    bottom: 0,
     backgroundColor: colors.surface,
     zIndex: 30,
     shadowColor: '#000',
@@ -522,18 +609,18 @@ const styles = StyleSheet.create({
     width: 240,
   },
   sidebarCollapsed: {
-    width: 64,
+    width: 72,
   },
   sidebarMobile: {
-    width: 280,             // Fixed width like web
+    width: 280,
     position: 'absolute',   
-    top: Platform.OS === 'android' ? 95 : 70,               // Android'da 97px (27+70), web'da 60px
-    bottom: 0,              // Bottom gacha
+    top: Platform.OS === 'android' ? 95 : Platform.OS === 'ios' ? 110 : 70,
+    bottom: 0,
     left: 0,                
     zIndex: 1000,           
     elevation: 24,          
     paddingTop: 0,          
-    borderTopRightRadius: 8,    // Slight rounded corners like web
+    borderTopRightRadius: 8,
     borderBottomRightRadius: 8,
     shadowColor: '#000',
     shadowOffset: { width: 4, height: 0 },
@@ -547,58 +634,59 @@ const styles = StyleSheet.create({
   // Mobile Overlay for Android - Behind floating sidebar
   mobileOverlay: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? 95 : 70,               // Android'da 97px (27+70), web'da 60px
+    top: Platform.OS === 'android' ? 95 : Platform.OS === 'ios' ? 110 : 70,
     left: 0,
     right: 0,
     bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    zIndex: 999,            // Just below the sidebar
+    zIndex: 999,
   },
 
   // Android-friendly header - Full height mobile
   sidebarHeader: {
-    height: 72,             // Match TopBar height
+    height: 72,
     backgroundColor: 'transparent',
     display: 'none',
   },
   sidebarHeaderMobile: {
-    height: 50,             // TopBar ostida bo'lgani uchun kichikroq
+    height: 60,
     flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-    backgroundColor: colors.surface,
+    borderBottomWidth: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 0,          // TopBar ostida bo'lgani uchun paddingTop kerak emas
+    paddingTop: 0,
     paddingHorizontal: 16,
   },
   headerContent: {
     flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#1f2937',
-    textAlign: 'center',
+    color: '#fff',
   },
   logoContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
   },
   logoText: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.primary,
-    textAlign: 'center',
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.5,
   },
 
   // Menu Container
   menuContainer: {
-    padding: 12,
+    padding: 8,
     flex: 1,
-    paddingTop: 20,
+    paddingTop: 16,
   },
   menuContainerMobile: {
     padding: 16,
@@ -607,56 +695,66 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
 
-  // Menu Item - Web-like design
+  // Menu Item - Modern design with animations
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    marginBottom: 4,
-    borderRadius: 8,        // Web-like rounded corners
-    marginHorizontal: 8,
+    marginBottom: 6,
+    borderRadius: 50,
+    marginHorizontal: 4,
     backgroundColor: 'transparent',
     minHeight: 48,
+    minWidth: 48,
+    overflow: 'hidden',
   },
   menuItemActive: {
-    backgroundColor: '#3b82f620',
+    // Clean style - no shadow
   },
   menuItemCollapsed: {
     justifyContent: 'center',
-    padding: 0,
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 0,
+    marginLeft: 8,
+    marginRight: 8,
+    width: 56,
+    minWidth: 56,
+    borderRadius: 28,
   },
   menuItemMobile: {
-    minHeight: 48,          // Web-like height
+    minHeight: 48,
     paddingHorizontal: 12,
     paddingVertical: 8,
     marginBottom: 4,
-    borderRadius: 8,        // Web-like rounded corners
+    borderRadius: 50,
     backgroundColor: 'transparent',
   },
 
-  // Icon Container - Web-like design
+  // Icon Container - Modern design with scale animation
   iconContainer: {
-    width: 40,              // Web-like size
+    width: 40,
     height: 40,
-    borderRadius: 8,        // Web-like rounded corners
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent',
     marginRight: 12,
   },
   iconContainerActive: {
-    backgroundColor: '#3b82f620',
+    // Remove duplicate active styles - only keep inline backgroundColor
   },
   iconContainerCollapsed: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    margin: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginVertical: 0,
+    marginHorizontal: 0,
   },
   iconContainerMobile: {
-    width: 40,              // Web-like size
+    width: 40,
     height: 40,
-    borderRadius: 8,        // Web-like rounded corners
+    borderRadius: 20,
     marginRight: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -750,7 +848,7 @@ const styles = StyleSheet.create({
 
   // Footer - Web-like design
   footerContainer: {
-    padding: 12,
+    padding: 8,
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
     backgroundColor: colors.surface,
@@ -763,6 +861,7 @@ const styles = StyleSheet.create({
     borderTopColor: '#e5e7eb',
     backgroundColor: colors.surface,
   },
+  
   footerButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -773,7 +872,14 @@ const styles = StyleSheet.create({
   },
   footerButtonCollapsed: {
     justifyContent: 'center',
-    padding: 12,
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 0,
+    marginLeft: 8,
+    marginRight: 8,
+    width: 56,
+    minWidth: 56,
+    borderRadius: 28,
   },
   footerButtonMobile: {
     minHeight: 48,          // Web-like height
@@ -801,14 +907,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: Platform.OS === 'web' ? 20 : 0,
   },
   modalContainer: {
     backgroundColor: 'white',
-    borderRadius: 20,
+    borderRadius: Platform.OS === 'web' ? 20 : 0,
     width: '100%',
-    maxWidth: 500,
-    maxHeight: '80%',
+    maxWidth: Platform.OS === 'web' ? 500 : '100%',
+    height: Platform.OS === 'web' ? 'auto' : '100%',
+    maxHeight: Platform.OS === 'web' ? '80%' : '100%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.25,
@@ -820,6 +927,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
+    paddingTop: Platform.OS === 'ios' ? 60 : 20,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },

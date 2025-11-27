@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Linking } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
 
 const SupportScreen = ({ navigation }) => {
@@ -190,7 +191,7 @@ const SupportScreen = ({ navigation }) => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.backIcon}>←</Text>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>🎧 Technical Support</Text>
       </View>
@@ -198,13 +199,19 @@ const SupportScreen = ({ navigation }) => {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Quick Contact Methods */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📞 Quick Contact</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+            <Ionicons name="call" size={20} color={colors.primary} style={{ marginRight: 8 }} />
+            <Text style={styles.sectionTitle}>Quick Contact</Text>
+          </View>
           {contactMethods.map(method => renderContactMethod(method))}
         </View>
 
         {/* Emergency Contact - Red Background */}
         <View style={styles.emergencySection}>
-          <Text style={styles.emergencySectionTitle}>🚨 FAVQULOTA ALOQA</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+            <Ionicons name="alert-circle" size={22} color="#FF3B30" style={{ marginRight: 8 }} />
+            <Text style={styles.emergencySectionTitle}>FAVQULOTA ALOQA</Text>
+          </View>
           {renderEmergencyContact(emergencyContact)}
         </View>
 
@@ -273,7 +280,10 @@ const SupportScreen = ({ navigation }) => {
                 <Text style={styles.officeTitle}>{office.title}</Text>
               </View>
               <Text style={styles.officeAddress}>{office.address}</Text>
-              <Text style={styles.officePhone}>📞 {office.phone}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                <Ionicons name="call" size={16} color={colors.textSecondary} style={{ marginRight: 4 }} />
+                <Text style={styles.officePhone}>{office.phone}</Text>
+              </View>
               <Text style={styles.officeTime}>🕒 {office.workTime}</Text>
             </View>
           ))}
@@ -285,7 +295,7 @@ const SupportScreen = ({ navigation }) => {
           onPress={() => navigation.navigate('Help')}
           activeOpacity={0.8}
         >
-          <Text style={styles.faqIcon}>❓</Text>
+          <Ionicons name="help-circle" size={24} color={colors.primary} style={{ marginRight: 12 }} />
           <View style={styles.faqTextContainer}>
             <Text style={styles.faqButtonText}>Frequently Asked Questions</Text>
             <Text style={styles.faqButtonSubtext}>Check FAQ section for quick answers</Text>

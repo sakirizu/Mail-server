@@ -1,8 +1,11 @@
 import React from 'react';
-import { View, Text, FlatList, StyleSheet, useWindowDimensions, RefreshControl } from 'react-native';
+import { View, Text, FlatList, StyleSheet, useWindowDimensions, RefreshControl, Animated } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import MailItem from '../components/MailItem';
 import { colors } from '../styles/theme';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config/api';
 
 export default function InboxScreen() {
   const [emails, setEmails] = React.useState([]);
@@ -14,17 +17,27 @@ export default function InboxScreen() {
   const isDesktop = width >= 900;
   const isMobile = width < 768;
 
+  // Animation values for empty state
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const scaleAnim = React.useRef(new Animated.Value(0.8)).current;
+  const pulseAnim = React.useRef(new Animated.Value(1)).current;
+
   const loadEmailStats = async () => {
     try {
       if (!user || !user.token) return;
 
-      const response = await fetch('http://localhost:3001/api/mails/stats', {
+      const response = await fetch(`${API_BASE_URL}/api/mails/stats`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${user.token}`,
           'Content-Type': 'application/json'
         }
       });
+
+      if (response.status === 401) {
+        console.log('Token expired, please login again');
+        return;
+      }
 
       if (response.ok) {
         const data = await response.json();
@@ -43,13 +56,19 @@ export default function InboxScreen() {
         return;
       }
 
-      const response = await fetch('http://localhost:3001/api/mails/inbox', {
+      const response = await fetch(`${API_BASE_URL}/api/mails/inbox`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${user.token}`,
           'Content-Type': 'application/json'
         }
       });
+
+      if (response.status === 401) {
+        console.log('⚠️ Token expired or invalid. Please logout and login again.');
+        setEmails([]);
+        return;
+      }
 
       if (response.ok) {
         const data = await response.json();
@@ -79,8 +98,51 @@ export default function InboxScreen() {
     
     if (user) {
       loadInitialData();
+      
+      // Auto-refresh every 10 seconds
+      const interval = setInterval(() => {
+        loadEmails();
+        loadEmailStats();
+      }, 10000);
+      
+      return () => clearInterval(interval);
     }
   }, [user]);
+
+  // Animate empty state
+  React.useEffect(() => {
+    if (!loading && (!emails || emails.length === 0)) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      // Pulse animation loop
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.1,
+            duration: 1500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1500,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }
+  }, [loading, emails]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -90,7 +152,7 @@ export default function InboxScreen() {
 
   const handleEmailRead = async (emailId) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/mails/${emailId}/read`, {
+      const response = await fetch(`${API_BASE_URL}/api/mails/${emailId}/read`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${user.token}`,
@@ -137,13 +199,31 @@ export default function InboxScreen() {
   if (!emails || emails.length === 0) {
     return (
       <View style={[styles.container, isMobile && styles.containerMobile]}>
-        <View style={[styles.emptyContainer, isMobile && styles.emptyContainerMobile]}>
-          <Text style={[styles.emptyTitle, isMobile && styles.emptyTitleMobile]}>📧</Text>
+        <Animated.View 
+          style={[
+            styles.emptyContainer, 
+            isMobile && styles.emptyContainerMobile,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }]
+            }
+          ]}
+        >
+          <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+            <LinearGradient
+              colors={['#007AFF', '#0051D5']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.emptyIconContainer}
+            >
+              <Ionicons name="mail-outline" size={64} color="#fff" />
+            </LinearGradient>
+          </Animated.View>
           <Text style={[styles.emptyText, isMobile && styles.emptyTextMobile]}>受信トレイにメールがありません</Text>
           <Text style={[styles.emptySubtext, isMobile && styles.emptySubtextMobile]}>
             メールを受信すると、ここに表示されます
           </Text>
-        </View>
+        </Animated.View>
       </View>
     );
   }
@@ -154,24 +234,36 @@ export default function InboxScreen() {
       isDesktop && styles.containerDesktop,
       isMobile && styles.containerMobile
     ]}>
-      {/* Header with email count */}
-      <View style={[styles.header, isMobile && styles.headerMobile]}>
+      {/* Modern Header with gradient */}
+      <LinearGradient
+        colors={['#007AFF', '#0051D5']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.header, isMobile && styles.headerMobile]}
+      >
         <View style={styles.headerContent}>
           <View style={styles.inboxInfoContainer}>
-            <Text style={[styles.pageTitle, isMobile && styles.pageTitleMobile]}>
-              受信トレイ
-            </Text>
-            <Text style={[styles.inboxTitle, isMobile && styles.inboxTitleMobile]}>
-              📧 {emails.length} 通
-            </Text>
-            {unreadCount > 0 && (
-              <Text style={[styles.unreadInfo, isMobile && styles.unreadInfoMobile]}>
-                {unreadCount} 件未読
+            <View style={styles.titleRow}>
+              <Ionicons name="mail-unread" size={28} color="#fff" />
+              <Text style={[styles.pageTitle, isMobile && styles.pageTitleMobile]}>
+                受信トレイ
               </Text>
-            )}
+            </View>
+            <View style={styles.statsRow}>
+              <View style={styles.statBadge}>
+                <Ionicons name="mail" size={16} color="#fff" />
+                <Text style={styles.statText}>{emails.length} 通</Text>
+              </View>
+              {unreadCount > 0 && (
+                <View style={[styles.statBadge, styles.unreadBadge]}>
+                  <Ionicons name="alert-circle" size={16} color="#FF3B30" />
+                  <Text style={[styles.statText, styles.unreadText]}>{unreadCount} 件未読</Text>
+                </View>
+              )}
+            </View>
           </View>
         </View>
-      </View>
+      </LinearGradient>
       
       {/* Mail list */}
       <View style={[styles.listContainer, isMobile && styles.listContainerMobile]}>
@@ -240,49 +332,48 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '100%',
   },
-  unreadBadge: {
-    backgroundColor: colors.secondary,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginLeft: 12,
-  },
-  unreadText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '600',
-  },
   inboxInfoContainer: {
     flex: 1,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 8,
   },
   pageTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: colors.text,
-    marginBottom: 2,
+    color: '#fff',
   },
   pageTitleMobile: {
-    fontSize: 26,
-    fontWeight: '800',
+    fontSize: 22,
+    fontWeight: '700',
   },
-  inboxTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.textSecondary,
-    marginBottom: 1,
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  inboxTitleMobile: {
-    fontSize: 18,
+  statBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+  },
+  unreadBadge: {
+    backgroundColor: '#fff',
+  },
+  statText: {
+    color: '#fff',
+    fontSize: 13,
     fontWeight: '600',
   },
-  unreadInfo: {
-    fontSize: 14,
-    color: colors.secondary,
-    fontWeight: '500',
-  },
-  unreadInfoMobile: {
-    fontSize: 16,
-    fontWeight: '600',
+  unreadText: {
+    color: '#FF3B30',
   },
   title: {
     fontSize: 24,
@@ -345,13 +436,18 @@ const styles = StyleSheet.create({
   emptyContainerMobile: {
     paddingHorizontal: 24,
   },
-  emptyTitle: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  emptyTitleMobile: {
-    fontSize: 56,
-    marginBottom: 20,
+  emptyIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+    shadowColor: '#007AFF',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
   },
   emptyText: {
     fontSize: 18,

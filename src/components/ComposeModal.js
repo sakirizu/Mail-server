@@ -14,8 +14,12 @@ import {
   Platform,
   Alert
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { colors } from '../styles/theme';
+import ConfirmModal from './ConfirmModal';
+import NotificationModal from './NotificationModal';
+import { API_BASE_URL } from '../config/api';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -26,6 +30,9 @@ export default function ComposeModal({ visible, onClose, replyTo = null, draftDa
   );
   const [body, setBody] = useState(draftData?.body || '');
   const [loading, setLoading] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [emailPreview, setEmailPreview] = useState(null);
+  const [showSuccessNotification, setShowSuccessNotification] = useState(false);
   const { user } = useAuth();
 
   // Animation values
@@ -85,31 +92,52 @@ export default function ComposeModal({ visible, onClose, replyTo = null, draftDa
       return;
     }
 
+    // Show confirmation preview
+    setEmailPreview({
+      to: to.trim(),
+      subject: subject.trim(),
+      body: body.trim()
+    });
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmSend = async () => {
+    setShowConfirmModal(false);
     setLoading(true);
+    
     try {
-      const response = await fetch('http://localhost:3001/api/mails/send', {
+      const response = await fetch(`${API_BASE_URL}/api/mails/send`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${user.token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          to: to.trim(),
-          subject: subject.trim(),
-          body: body.trim(),
+          to: emailPreview.to,
+          subject: emailPreview.subject,
+          body: emailPreview.body,
+          confirmSend: true
         }),
       });
 
-      if (response.ok) {
-        Alert.alert('成功！', 'メールが正常に送信されました', [
-          { text: 'OK', onPress: handleClose }
-        ]);
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        // Show success notification
+        setShowSuccessNotification(true);
+        
+        // Reset form
         setTo(replyTo?.from || '');
         setSubject(replyTo ? `Re: ${replyTo.subject}` : '');
         setBody('');
+        
+        // Auto close notification and modal after 2 seconds
+        setTimeout(() => {
+          setShowSuccessNotification(false);
+          handleClose();
+        }, 2000);
       } else {
-        const error = await response.json();
-        Alert.alert('エラー', error.error || 'メール送信に失敗しました');
+        Alert.alert('エラー', result.error || 'メール送信に失敗しました');
       }
     } catch (error) {
       console.error('Send email error:', error);
@@ -152,7 +180,7 @@ export default function ComposeModal({ visible, onClose, replyTo = null, draftDa
     }
   };
 
-  return (
+  return (<>
     <Modal
       visible={visible}
       transparent={true}
@@ -183,9 +211,10 @@ export default function ComposeModal({ visible, onClose, replyTo = null, draftDa
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-                <Text style={styles.closeIcon}>✕</Text>
+                <Ionicons name="close" size={20} color="#fff" />
               </TouchableOpacity>
-              <Text style={styles.headerTitle}>✏️ 新しいメッセージ</Text>
+              <Ionicons name="create" size={20} color="#fff" style={{ marginRight: 8 }} />
+              <Text style={styles.headerTitle}>新しいメッセージ</Text>
             </View>
             <View style={styles.headerRight}>
               <TouchableOpacity onPress={handleSaveDraft} style={styles.draftButton}>
@@ -248,7 +277,23 @@ export default function ComposeModal({ visible, onClose, replyTo = null, draftDa
         </KeyboardAvoidingView>
       </Animated.View>
     </Modal>
-  );
+
+    <ConfirmModal
+      visible={showConfirmModal}
+      title="送信確認"
+      message="このメールを送信しますか？"
+      preview={emailPreview}
+      onConfirm={handleConfirmSend}
+      onCancel={() => setShowConfirmModal(false)}
+    />
+
+    <NotificationModal
+      visible={showSuccessNotification}
+      type="success"
+      title="送信完了"
+      message="メールが正常に送信されました"
+    />
+  </>);
 }
 
 const styles = StyleSheet.create({
@@ -265,12 +310,12 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     position: 'absolute',
-    top: '10%',
-    left: '15%',
-    right: '15%',
-    bottom: '10%',
-    backgroundColor: 'rgba(255, 255, 255, 0.98)', // Slightly more opaque
-    borderRadius: 24, // More rounded corners
+    top: Platform.OS === 'web' ? '10%' : 0,
+    left: Platform.OS === 'web' ? '15%' : 0,
+    right: Platform.OS === 'web' ? '15%' : 0,
+    bottom: Platform.OS === 'web' ? '10%' : 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    borderRadius: Platform.OS === 'web' ? 24 : 0,
     elevation: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 12 },
@@ -293,6 +338,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 24,
     paddingVertical: 18,
+    paddingTop: Platform.OS === 'ios' ? 60 : 18,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0, 122, 255, 0.1)',
     backgroundColor: '#007AFF', // Beautiful blue to match send button
@@ -356,28 +402,32 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.text.DEFAULT,
     marginBottom: 8,
-    width: '70%',
+    width: Platform.OS === 'web' ? '70%' : '90%',
     textAlign: 'left',
   },
   input: {
-    width: '70%',
-    borderWidth: 0,
-    borderRadius: 16, // More rounded
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    width: Platform.OS === 'web' ? '70%' : '90%',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     fontSize: 16,
     color: colors.text.DEFAULT,
-    backgroundColor: 'rgba(248, 250, 252, 0.9)', // Slightly more opaque
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-    // Enhanced styling for web
+    backgroundColor: '#FFFFFF',
+    // Clean design - no shadow on mobile
+    ...(Platform.OS !== 'web' && {
+      shadowColor: 'transparent',
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0,
+      shadowRadius: 0,
+      elevation: 0,
+    }),
+    // Enhanced styling for web only
     ...(Platform.OS === 'web' && {
       outlineStyle: 'none',
       transition: 'all 0.2s ease-in-out',
-      boxShadow: '0 3px 12px rgba(0, 0, 0, 0.08)',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
     }),
   },
   bodyInput: {
@@ -405,7 +455,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4,
     shadowRadius: 12,
-    width: '65%',
+    width: Platform.OS === 'web' ? '50%' : '60%',
     // Add gradient effect for web
     ...(Platform.OS === 'web' && {
       background: 'linear-gradient(135deg, #007AFF 0%, #0056D3 100%)',

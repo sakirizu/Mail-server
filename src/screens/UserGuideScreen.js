@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
 
 const UserGuideScreen = ({ navigation }) => {
@@ -113,9 +114,10 @@ const UserGuideScreen = ({ navigation }) => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.backIcon}>←</Text>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>📚 User Guide</Text>
+        <Ionicons name="library" size={24} color={colors.text} style={{ marginRight: 8 }} />
+        <Text style={styles.headerTitle}>User Guide</Text>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -129,16 +131,22 @@ const UserGuideScreen = ({ navigation }) => {
 
         {/* Guide Topics */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📖 Guide Topics</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+            <Ionicons name="book" size={20} color={colors.primary} style={{ marginRight: 8 }} />
+            <Text style={styles.sectionTitle}>Guide Topics</Text>
+          </View>
           {guideTopics.map(topic => renderGuideSection(topic))}
         </View>
 
         {/* Quick Tips */}
         <View style={styles.tipsSection}>
-          <Text style={styles.tipsTitle}>💡 Quick Tips</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+            <Ionicons name="bulb" size={20} color="#FFD60A" style={{ marginRight: 8 }} />
+            <Text style={styles.tipsTitle}>Quick Tips</Text>
+          </View>
           
           <View style={styles.tipCard}>
-            <Text style={styles.tipIcon}>⌨️</Text>
+            <Ionicons name="keypad" size={24} color={colors.primary} style={{ marginRight: 12 }} />
             <View style={styles.tipContent}>
               <Text style={styles.tipTitle}>Keyboard Shortcuts</Text>
               <Text style={styles.tipText}>• Ctrl+N: New email</Text>
@@ -148,7 +156,7 @@ const UserGuideScreen = ({ navigation }) => {
           </View>
 
           <View style={styles.tipCard}>
-            <Text style={styles.tipIcon}>🔍</Text>
+            <Ionicons name="search" size={24} color={colors.primary} style={{ marginRight: 12 }} />
             <View style={styles.tipContent}>
               <Text style={styles.tipTitle}>Search Tips</Text>
               <Text style={styles.tipText}>• Use quotes for exact phrases</Text>
@@ -158,7 +166,7 @@ const UserGuideScreen = ({ navigation }) => {
           </View>
 
           <View style={styles.tipCard}>
-            <Text style={styles.tipIcon}>📧</Text>
+            <Ionicons name="mail" size={24} color={colors.primary} style={{ marginRight: 12 }} />
             <View style={styles.tipContent}>
               <Text style={styles.tipTitle}>Email Best Practices</Text>
               <Text style={styles.tipText}>• Use clear, descriptive subject lines</Text>
@@ -170,10 +178,13 @@ const UserGuideScreen = ({ navigation }) => {
 
         {/* Video Tutorials */}
         <View style={styles.videoSection}>
-          <Text style={styles.sectionTitle}>🎥 Video Tutorials</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+            <Ionicons name="videocam" size={20} color={colors.primary} style={{ marginRight: 8 }} />
+            <Text style={styles.sectionTitle}>Video Tutorials</Text>
+          </View>
           
           <TouchableOpacity style={styles.videoCard}>
-            <Text style={styles.videoIcon}>▶️</Text>
+            <Ionicons name="play-circle" size={48} color={colors.primary} />
             <View style={styles.videoContent}>
               <Text style={styles.videoTitle}>Getting Started with SMail</Text>
               <Text style={styles.videoDescription}>5 min tutorial covering the basics</Text>
@@ -181,7 +192,7 @@ const UserGuideScreen = ({ navigation }) => {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.videoCard}>
-            <Text style={styles.videoIcon}>▶️</Text>
+            <Ionicons name="play-circle" size={48} color={colors.primary} />
             <View style={styles.videoContent}>
               <Text style={styles.videoTitle}>Advanced Email Management</Text>
               <Text style={styles.videoDescription}>Learn filters, labels, and organization</Text>
@@ -189,7 +200,7 @@ const UserGuideScreen = ({ navigation }) => {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.videoCard}>
-            <Text style={styles.videoIcon}>▶️</Text>
+            <Ionicons name="play-circle" size={48} color={colors.primary} />
             <View style={styles.videoContent}>
               <Text style={styles.videoTitle}>Security and Privacy Settings</Text>
               <Text style={styles.videoDescription}>Protect your account and data</Text>
@@ -205,14 +216,14 @@ const UserGuideScreen = ({ navigation }) => {
               style={styles.helpButton}
               onPress={() => navigation.navigate('Help')}
             >
-              <Text style={styles.helpButtonIcon}>❓</Text>
+              <Ionicons name="help-circle" size={32} color="#fff" />
               <Text style={styles.helpButtonText}>FAQ</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.helpButton}
               onPress={() => navigation.navigate('Support')}
             >
-              <Text style={styles.helpButtonIcon}>🎧</Text>
+              <Ionicons name="headset" size={32} color="#fff" />
               <Text style={styles.helpButtonText}>Support</Text>
             </TouchableOpacity>
           </View>

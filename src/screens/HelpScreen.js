@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
 
 const HelpScreen = ({ navigation }) => {
@@ -179,9 +180,10 @@ const HelpScreen = ({ navigation }) => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.backIcon}>←</Text>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>❓ Help</Text>
+        <Ionicons name="help-circle" size={24} color={colors.text} style={{ marginRight: 8 }} />
+        <Text style={styles.headerTitle}>Help</Text>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -194,7 +196,7 @@ const HelpScreen = ({ navigation }) => {
             onChangeText={setSearchQuery}
             placeholderTextColor={colors.textSecondary}
           />
-          <Text style={styles.searchIcon}>🔍</Text>
+          <Ionicons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
         </View>
 
         {/* Category Filter */}
@@ -245,17 +247,20 @@ const HelpScreen = ({ navigation }) => {
           onPress={handleContactSupport}
           activeOpacity={0.8}
         >
-          <Text style={styles.supportIcon}>📞</Text>
+          <Ionicons name="call" size={24} color="#fff" style={{ marginBottom: 8 }} />
           <Text style={styles.supportButtonText}>Contact Technical Support</Text>
           <Text style={styles.supportButtonSubtext}>Can't find your answer? Contact us</Text>
         </TouchableOpacity>
 
         {/* Additional Help Resources */}
         <View style={styles.resourcesSection}>
-          <Text style={styles.sectionTitle}>📚 Additional Resources</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+            <Ionicons name="library" size={20} color={colors.primary} style={{ marginRight: 8 }} />
+            <Text style={styles.sectionTitle}>Additional Resources</Text>
+          </View>
           
           <TouchableOpacity style={styles.resourceItem}>
-            <Text style={styles.resourceIcon}>📖</Text>
+            <Ionicons name="book-outline" size={24} color={colors.primary} style={{ marginRight: 12 }} />
             <View style={styles.resourceText}>
               <Text style={styles.resourceTitle}>User Manual</Text>
               <Text style={styles.resourceDesc}>Complete usage guide</Text>
@@ -263,7 +268,7 @@ const HelpScreen = ({ navigation }) => {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.resourceItem}>
-            <Text style={styles.resourceIcon}>🎥</Text>
+            <Ionicons name="videocam-outline" size={24} color={colors.primary} style={{ marginRight: 12 }} />
             <View style={styles.resourceText}>
               <Text style={styles.resourceTitle}>Video Tutorials</Text>
               <Text style={styles.resourceDesc}>Step-by-step video lessons</Text>
@@ -271,7 +276,7 @@ const HelpScreen = ({ navigation }) => {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.resourceItem}>
-            <Text style={styles.resourceIcon}>💡</Text>
+            <Ionicons name="bulb-outline" size={24} color={colors.primary} style={{ marginRight: 12 }} />
             <View style={styles.resourceText}>
               <Text style={styles.resourceTitle}>Tips and Tricks</Text>
               <Text style={styles.resourceDesc}>Tips for effective usage</Text>
@@ -293,7 +298,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   backButton: {
     marginRight: 15,
@@ -301,13 +308,13 @@ const styles = StyleSheet.create({
   },
   backIcon: {
     fontSize: 24,
-    color: colors.white,
+    color: colors.text,
     fontWeight: 'bold',
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: colors.white,
+    color: colors.text,
   },
   content: {
     flex: 1,

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, useWindowDimensions, Modal, ScrollView, Alert, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
 import { useAuth } from '../context/AuthContext';
 
@@ -273,25 +274,44 @@ const TopBar = ({ onMenuPress, onProfilePress, onStatisticsPress }) => {
       </View>
 
       {/* Search Input - Centered */}
-      <View style={styles.centerContainer}>
-        <View style={[
-          styles.searchContainer,
-          searchFocused && styles.searchContainerFocused
-        ]}>
+      <View style={styles.centerContainer} pointerEvents="box-none">
+        <View 
+          style={[
+            styles.searchContainer,
+            searchFocused && styles.searchContainerFocused
+          ]}
+          pointerEvents="auto"
+        >
           <TextInput
             style={styles.searchInput}
             placeholder="Search mail"
             value={searchValue}
             onChangeText={setSearchValue}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setSearchFocused(false)}
+            onFocus={() => {
+              console.log('Search input focused');
+              setSearchFocused(true);
+            }}
+            onBlur={() => {
+              console.log('Search input blurred');
+              setSearchFocused(false);
+            }}
             placeholderTextColor="#999"
+            editable={true}
+            selectTextOnFocus={true}
+            underlineColorAndroid="transparent"
+            autoCorrect={false}
+            autoCapitalize="none"
+            showSoftInputOnFocus={true}
+            keyboardType="default"
+            returnKeyType="search"
+            blurOnSubmit={true}
           />
           <TouchableOpacity style={styles.searchButton}>
-            <Text style={[
-              styles.searchIcon,
-              searchFocused && styles.searchIconFocused
-            ]}>🔍</Text>
+            <Ionicons 
+              name="search" 
+              size={20} 
+              color={searchFocused ? colors.primary : '#999'}
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -322,21 +342,21 @@ const TopBar = ({ onMenuPress, onProfilePress, onStatisticsPress }) => {
               style={styles.menuItem}
               onPress={() => handleProfileMenuAction('profile')}
             >
-              <Text style={styles.menuIcon}>👤</Text>
+              <Ionicons name="person-outline" size={20} color={colors.text} style={{ marginRight: 12 }} />
               <Text style={styles.menuText}>プロフィール</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.menuItem}
               onPress={() => handleProfileMenuAction('statistics')}
             >
-              <Text style={styles.menuIcon}>📊</Text>
+              <Ionicons name="stats-chart-outline" size={20} color={colors.text} style={{ marginRight: 12 }} />
               <Text style={styles.menuText}>統計</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.menuItem}
               onPress={() => handleProfileMenuAction('accounts')}
             >
-              <Text style={styles.menuIcon}>👥</Text>
+              <Ionicons name="people-outline" size={20} color={colors.text} style={{ marginRight: 12 }} />
               <Text style={styles.menuText}>アカウント ({accounts.length})</Text>
             </TouchableOpacity>
             <View style={styles.menuDivider} />
@@ -364,12 +384,13 @@ const TopBar = ({ onMenuPress, onProfilePress, onStatisticsPress }) => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>👥 Switch Account</Text>
+              <Ionicons name="people" size={20} color={colors.primary} style={{ marginRight: 8 }} />
+              <Text style={styles.modalTitle}>Switch Account</Text>
               <TouchableOpacity 
                 style={styles.closeButton}
                 onPress={() => setAccountSwitcherVisible(false)}
               >
-                <Text style={styles.closeIcon}>✕</Text>
+                <Ionicons name="close" size={20} color={colors.text} />
               </TouchableOpacity>
             </View>
             
@@ -390,7 +411,10 @@ const TopBar = ({ onMenuPress, onProfilePress, onStatisticsPress }) => {
                         <Text style={styles.accountName}>{account.name}</Text>
                         <Text style={styles.accountEmail}>{account.email}</Text>
                         {account.id === user?.id && (
-                          <Text style={styles.currentBadge}>✓ Current</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Ionicons name="checkmark" size={16} color={colors.primary} style={{ marginRight: 4 }} />
+                            <Text style={styles.currentBadge}>Current</Text>
+                          </View>
                         )}
                       </View>
                     </View>
@@ -401,7 +425,7 @@ const TopBar = ({ onMenuPress, onProfilePress, onStatisticsPress }) => {
                       style={styles.removeButton}
                       onPress={() => handleRemoveAccount(account.id)}
                     >
-                      <Text style={styles.removeText}>🗑️</Text>
+                      <Ionicons name="trash-outline" size={20} color="#FF3B30" />
                     </TouchableOpacity>
                   )}
                 </View>
@@ -436,7 +460,7 @@ const TopBar = ({ onMenuPress, onProfilePress, onStatisticsPress }) => {
                 style={styles.closeButton}
                 onPress={closeConfirmation}
               >
-                <Text style={styles.closeIcon}>✕</Text>
+                <Ionicons name="close" size={20} color={colors.text} />
               </TouchableOpacity>
             </View>
             
@@ -488,7 +512,7 @@ const TopBar = ({ onMenuPress, onProfilePress, onStatisticsPress }) => {
                 style={styles.closeButton}
                 onPress={closeMessage}
               >
-                <Text style={styles.closeIcon}>✕</Text>
+                <Ionicons name="close" size={20} color={colors.text} />
               </TouchableOpacity>
             </View>
             
@@ -530,12 +554,13 @@ const TopBar = ({ onMenuPress, onProfilePress, onStatisticsPress }) => {
         <View style={styles.modalOverlay}>
           <View style={styles.twoFactorModalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>🔐 二段階認証</Text>
+              <Ionicons name="lock-closed" size={20} color={colors.primary} style={{ marginRight: 8 }} />
+              <Text style={styles.modalTitle}>二段階認証</Text>
               <TouchableOpacity 
                 style={styles.closeButton}
                 onPress={cancel2FA}
               >
-                <Text style={styles.closeIcon}>✕</Text>
+                <Ionicons name="close" size={20} color={colors.text} />
               </TouchableOpacity>
             </View>
             
@@ -590,28 +615,28 @@ const TopBar = ({ onMenuPress, onProfilePress, onStatisticsPress }) => {
 const styles = StyleSheet.create({
   // Status Bar - faqat Android uchun telefon ma'lumotlari
   statusBar: {
-    height: 27,
-    backgroundColor: '#0000cc',
+    height: Platform.OS === 'ios' ? 44 : 27,
+    backgroundColor: Platform.OS === 'ios' ? '#000000' : '#0000cc',
     width: '100%',
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 1002,          // TopBar'dan yuqori
+    zIndex: 1002,
   },
   topbar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Platform.OS === 'android' ? colors.surface + '80' : colors.surface, // Android'da transparent, web'da normal
+    backgroundColor: Platform.OS === 'android' ? colors.surface + '80' : colors.surface,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    paddingTop: Platform.OS === 'android' ? 10 : 12,         // Android'da status bar uchun joy, web'da normal
-    minHeight: Platform.OS === 'android' ? 30 : 10,          // Android'da balandroq, web'da normal
-    zIndex: 1001,           // Higher than floating sidebar
+    paddingTop: Platform.OS === 'android' ? 10 : Platform.OS === 'ios' ? 50 : 12,  // iOS'da 50px (notch uchun), Android'da 10px, web'da 12px
+    minHeight: Platform.OS === 'android' ? 30 : 10,
+    zIndex: 1001,
     width: '100%',
-    position: 'absolute',   // Fixed o'rniga absolute
-    top: Platform.OS === 'android' ? 27 : 0,                // Android'da status bar'dan keyin (27px), web'da yuqoridan
+    position: 'absolute',
+    top: Platform.OS === 'android' ? 27 : 0,
     left: 0,
     right: 0,
     borderBottomWidth: 1,
@@ -620,7 +645,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
-    elevation: 8,           // Android uchun shadow
+    elevation: 8,
   },
   topbarMobile: {
     padding: 12,

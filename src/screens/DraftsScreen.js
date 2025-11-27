@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Animated } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config/api';
 
 const DraftsScreen = ({ navigation }) => {
   const { user } = useAuth();
@@ -9,9 +12,48 @@ const DraftsScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Animation values
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const scaleAnim = React.useRef(new Animated.Value(0.8)).current;
+  const pulseAnim = React.useRef(new Animated.Value(1)).current;
+
   useEffect(() => {
     loadDrafts();
   }, []);
+
+  // Animate empty state
+  useEffect(() => {
+    if (!loading && drafts.length === 0) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.1,
+            duration: 1500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1500,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }
+  }, [loading, drafts]);
 
   const loadDrafts = async () => {
     if (!user || !user.token) {
@@ -20,7 +62,7 @@ const DraftsScreen = ({ navigation }) => {
     }
 
     try {
-      const response = await fetch('http://localhost:3001/api/mails/drafts', {
+      const response = await fetch(`${API_BASE_URL}/api/mails/drafts`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${user.token}`,
@@ -103,28 +145,55 @@ const DraftsScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <LinearGradient
+        colors={['#8E8E93', '#636366']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
         <View style={styles.headerContent}>
           <View style={styles.inboxInfoContainer}>
-            <Text style={styles.pageTitle}>
-              下書き
-            </Text>
-            <Text style={styles.inboxTitle}>
-              📄 {drafts.length} 件
-            </Text>
+            <View style={styles.titleRow}>
+              <Ionicons name="document-text" size={28} color="#fff" />
+              <Text style={styles.pageTitle}>下書き</Text>
+            </View>
+            <View style={styles.statsRow}>
+              <View style={styles.statBadge}>
+                <Ionicons name="document" size={16} color="#fff" />
+                <Text style={styles.statText}>{drafts.length} 件</Text>
+              </View>
+            </View>
           </View>
         </View>
-      </View>
+      </LinearGradient>
       
       {loading ? (
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>下書きを読み込み中...</Text>
         </View>
       ) : drafts.length === 0 ? (
-        <View style={styles.emptyContainer}>
+        <Animated.View 
+          style={[
+            styles.emptyContainer,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }]
+            }
+          ]}
+        >
+          <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+            <LinearGradient
+              colors={['#8E8E93', '#636366']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.emptyIconContainer}
+            >
+              <Ionicons name="document-text-outline" size={64} color="#fff" />
+            </LinearGradient>
+          </Animated.View>
           <Text style={styles.emptyText}>下書きがありません</Text>
           <Text style={styles.emptySubtext}>未送信のメールがここに表示されます</Text>
-        </View>
+        </Animated.View>
       ) : (
         <FlatList
           data={drafts}
@@ -151,12 +220,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.surface,
-    elevation: 2,
-    minHeight: 40,
+    paddingVertical: 16,
+    minHeight: 80,
   },
   headerContent: {
     flexDirection: 'row',
@@ -167,17 +232,66 @@ const styles = StyleSheet.create({
   inboxInfoContainer: {
     flex: 1,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 8,
+  },
   pageTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: colors.text,
-    marginBottom: 2,
+    color: '#fff',
   },
-  inboxTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.textSecondary,
-    marginBottom: 1,
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  statBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+  },
+  statText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  emptyIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+    shadowColor: '#8E8E93',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: colors.placeholder,
+    textAlign: 'center',
   },
   emailList: {
     padding: 16,
@@ -255,23 +369,6 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     color: colors.textSecondary,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: colors.text,
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: 'center',
   },
 });
 

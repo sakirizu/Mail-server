@@ -9,6 +9,7 @@ import {
   ScrollView,
   Modal 
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import { colors } from '../styles/theme';
 
@@ -124,7 +125,10 @@ const DeleteAccountScreen = ({ navigation }) => {
       </View>
 
       <View style={styles.warningCard}>
-        <Text style={styles.warningTitle}>⚠️ Diqqat!</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+          <Ionicons name="warning" size={24} color="#FF3B30" style={{ marginRight: 8 }} />
+          <Text style={styles.warningTitle}>Diqqat!</Text>
+        </View>
         <Text style={styles.warningText}>
           Bu amal qaytarib bo'lmaydigan jarayondir. Hisobingizni o'chirgandan so'ng:
         </Text>
@@ -138,7 +142,10 @@ const DeleteAccountScreen = ({ navigation }) => {
       </View>
 
       <View style={styles.requirementCard}>
-        <Text style={styles.requirementTitle}>🔐 2FA Talab</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+          <Ionicons name="lock-closed" size={20} color={colors.primary} style={{ marginRight: 8 }} />
+          <Text style={styles.requirementTitle}>2FA Talab</Text>
+        </View>
         <Text style={styles.requirementText}>
           Xavfsizlik uchun hisob o'chirish jarayonida 2FA verification talab qilinadi.
         </Text>
@@ -170,7 +177,10 @@ const DeleteAccountScreen = ({ navigation }) => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>🔐 2FA Tasdiqlash</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+              <Ionicons name="lock-closed" size={24} color={colors.primary} style={{ marginRight: 8 }} />
+              <Text style={styles.modalTitle}>2FA Tasdiqlash</Text>
+            </View>
             
             <Text style={styles.modalDescription}>
               Hisob o'chirish jarayonini yakunlash uchun 2FA kodni kiriting:

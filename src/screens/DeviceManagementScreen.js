@@ -8,6 +8,7 @@ import {
   Alert,
   RefreshControl
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import { colors } from '../styles/theme';
 
@@ -166,7 +167,7 @@ const DeviceManagementScreen = ({ navigation }) => {
                 style={styles.removeButton}
                 onPress={() => removeDevice(device.id, device)}
               >
-                <Text style={styles.removeButtonText}>🗑️</Text>
+                <Ionicons name="trash-outline" size={20} color="#FF3B30" />
               </TouchableOpacity>
             </View>
 

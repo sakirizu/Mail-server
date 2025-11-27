@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_ENDPOINTS } from '../config/api';
 
 const AuthContext = createContext();
 
@@ -17,15 +18,53 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const loadStoredData = async () => {
       try {
-        // Check for stay logged in preference
+        // Check for stay logged in with saved token (secure method)
         const stayLoggedIn = await AsyncStorage.getItem('stayLoggedIn');
-        const userCredentials = await AsyncStorage.getItem('userCredentials');
+        const savedUserToken = await AsyncStorage.getItem('savedUserToken');
+        const savedUser = await AsyncStorage.getItem('savedUser');
         
+        if (stayLoggedIn === 'true' && savedUserToken && savedUser) {
+          console.log('🔐 Auto-login with saved token...');
+          const userData = JSON.parse(savedUser);
+          const userWithToken = { ...userData, token: savedUserToken };
+          
+          // Verify token is still valid
+          try {
+            const response = await fetch(API_ENDPOINTS.VERIFY_TOKEN, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${savedUserToken}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              if (data.valid) {
+                console.log('✅ Auto-login successful');
+                setUser(userWithToken);
+                setIsAuthenticated(true);
+                await AsyncStorage.setItem(USER_KEY, JSON.stringify(userWithToken));
+                return;
+              }
+            }
+            
+            // Token invalid, clear saved data
+            console.log('⚠️ Saved token expired, clearing...');
+            await AsyncStorage.removeItem('stayLoggedIn');
+            await AsyncStorage.removeItem('savedUserToken');
+            await AsyncStorage.removeItem('savedUser');
+          } catch (error) {
+            console.error('Auto-login verification failed:', error);
+          }
+        }
+
+        // Fallback: Check old credentials method (deprecated)
+        const userCredentials = await AsyncStorage.getItem('userCredentials');
         if (stayLoggedIn === 'true' && userCredentials) {
-          // Auto-login with saved credentials
           const { username, password } = JSON.parse(userCredentials);
           await performAutoLogin(username, password);
-          return; // Exit early if auto-login is attempted
+          return;
         }
 
         // Load saved accounts
@@ -45,7 +84,7 @@ export const AuthProvider = ({ children }) => {
         } else if (currentAccountId && storedAccounts) {
           // Auto-login with last account if available
           const savedAccounts = JSON.parse(storedAccounts);
-          const lastAccount = savedAccounts.find(acc => acc.id === currentAccountId);
+          const lastAccount = savedAccounts.find(acc => acc.id === parseInt(currentAccountId));
           if (lastAccount) {
             autoLogin(lastAccount);
           }
@@ -62,7 +101,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setIsLoading(true);
       
-      const response = await fetch('http://localhost:3001/api/auth/login', {
+      const response = await fetch(API_ENDPOINTS.LOGIN, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
@@ -105,7 +144,7 @@ export const AuthProvider = ({ children }) => {
       try {
         if (user) {
           await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
-          await AsyncStorage.setItem(CURRENT_ACCOUNT_KEY, user.id);
+          await AsyncStorage.setItem(CURRENT_ACCOUNT_KEY, String(user.id));
         } else {
           await AsyncStorage.removeItem(USER_KEY);
           await AsyncStorage.removeItem(CURRENT_ACCOUNT_KEY);
@@ -163,7 +202,7 @@ export const AuthProvider = ({ children }) => {
   const autoLogin = async (accountData) => {
     try {
       // Verify token is still valid
-      const response = await fetch('http://localhost:3001/api/auth/verify', {
+      const response = await fetch(API_ENDPOINTS.VERIFY_TOKEN, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${accountData.token}`,
@@ -203,10 +242,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const signOut = () => {
-    // Complete sign out - remove current user but keep accounts for quick switching
+  const signOut = async () => {
+    // Complete sign out - remove current user and saved login data
     setUser(null);
     setIsAuthenticated(false);
+    
+    try {
+      // Clear stay logged in data
+      await AsyncStorage.removeItem('stayLoggedIn');
+      await AsyncStorage.removeItem('savedUserToken');
+      await AsyncStorage.removeItem('savedUser');
+      await AsyncStorage.removeItem('userCredentials'); // Old method
+      await AsyncStorage.removeItem(USER_KEY);
+    } catch (error) {
+      console.error('Error clearing login data:', error);
+    }
   };
 
   const signOutAll = async () => {
@@ -219,6 +269,11 @@ export const AuthProvider = ({ children }) => {
       await AsyncStorage.removeItem(USER_KEY);
       await AsyncStorage.removeItem(ACCOUNTS_KEY);
       await AsyncStorage.removeItem(CURRENT_ACCOUNT_KEY);
+      // Clear stay logged in data
+      await AsyncStorage.removeItem('stayLoggedIn');
+      await AsyncStorage.removeItem('savedUserToken');
+      await AsyncStorage.removeItem('savedUser');
+      await AsyncStorage.removeItem('userCredentials');
       await AsyncStorage.removeItem('ssm_user_token');
     } catch (error) {
       console.error('Error clearing storage:', error);

@@ -1,8 +1,11 @@
 import React from 'react';
-import { StyleSheet, View, Text, useWindowDimensions, FlatList, RefreshControl } from 'react-native';
+import { StyleSheet, View, Text, useWindowDimensions, FlatList, RefreshControl, Animated, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import MailItem from '../components/MailItem';
 import { colors } from '../styles/theme';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config/api';
 
 export default function SentScreen() {
   const [emails, setEmails] = React.useState([]);
@@ -13,6 +16,11 @@ export default function SentScreen() {
   const isDesktop = width >= 900;
   const isMobile = width < 768;
 
+  // Animation values
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const scaleAnim = React.useRef(new Animated.Value(0.8)).current;
+  const pulseAnim = React.useRef(new Animated.Value(1)).current;
+
   const loadEmails = async () => {
     try {
       if (!user || !user.token) {
@@ -21,7 +29,7 @@ export default function SentScreen() {
         return;
       }
 
-      const response = await fetch('http://localhost:3001/api/mails/sent', {
+      const response = await fetch(`${API_BASE_URL}/api/mails/sent`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${user.token}`,
@@ -52,8 +60,49 @@ export default function SentScreen() {
     
     if (user) {
       loadInitialEmails();
+      
+      // Auto-refresh every 10 seconds
+      const interval = setInterval(() => {
+        loadEmails();
+      }, 10000);
+      
+      return () => clearInterval(interval);
     }
   }, [user]);
+
+  // Animate empty state
+  React.useEffect(() => {
+    if (!loading && (!emails || emails.length === 0)) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.1,
+            duration: 1500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1500,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }
+  }, [loading, emails]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -74,13 +123,31 @@ export default function SentScreen() {
   if (!emails || emails.length === 0) {
     return (
       <View style={[styles.container, isMobile && styles.containerMobile]}>
-        <View style={[styles.emptyContainer, isMobile && styles.emptyContainerMobile]}>
-          <Text style={[styles.emptyTitle, isMobile && styles.emptyTitleMobile]}>📤</Text>
+        <Animated.View 
+          style={[
+            styles.emptyContainer, 
+            isMobile && styles.emptyContainerMobile,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }]
+            }
+          ]}
+        >
+          <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+            <LinearGradient
+              colors={['#007AFF', '#0051D5']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.emptyIconContainer}
+            >
+              <Ionicons name="paper-plane-outline" size={64} color="#fff" />
+            </LinearGradient>
+          </Animated.View>
           <Text style={[styles.emptyText, isMobile && styles.emptyTextMobile]}>送信済みメールがありません</Text>
           <Text style={[styles.emptySubtext, isMobile && styles.emptySubtextMobile]}>
             送信したメールがここに表示されます
           </Text>
-        </View>
+        </Animated.View>
       </View>
     );
   }
@@ -91,18 +158,29 @@ export default function SentScreen() {
       isDesktop && styles.containerDesktop,
       isMobile && styles.containerMobile
     ]}>
-      <View style={[styles.header, isMobile && styles.headerMobile]}>
+      <LinearGradient
+        colors={['#007AFF', '#0051D5']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.header, isMobile && styles.headerMobile]}
+      >
         <View style={styles.headerContent}>
           <View style={styles.inboxInfoContainer}>
-            <Text style={[styles.pageTitle, isMobile && styles.pageTitleMobile]}>
-              送信済み
-            </Text>
-            <Text style={[styles.inboxTitle, isMobile && styles.inboxTitleMobile]}>
-              📤 {emails.length} mails
-            </Text>
+            <View style={styles.titleRow}>
+              <Ionicons name="paper-plane" size={28} color="#fff" />
+              <Text style={[styles.pageTitle, isMobile && styles.pageTitleMobile]}>
+                送信済み
+              </Text>
+            </View>
+            <View style={styles.statsRow}>
+              <View style={styles.statBadge}>
+                <Ionicons name="mail" size={16} color="#fff" />
+                <Text style={styles.statText}>{emails.length} 通</Text>
+              </View>
+            </View>
           </View>
         </View>
-      </View>
+      </LinearGradient>
       <View style={[styles.listContainer, isMobile && styles.listContainerMobile]}>
         <FlatList
           data={emails}
@@ -146,22 +224,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.surface,
-    elevation: 2,
-    minHeight: 40,
+    paddingVertical: 16,
+    paddingTop: Platform.OS === 'ios' ? 60 : 16,
+    minHeight: 80,
   },
   headerMobile: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderBottomWidth: 0,
-    backgroundColor: colors.surface,
-    elevation: 4,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
-    minHeight: 40,
+    paddingVertical: 16,
+    paddingTop: Platform.OS === 'ios' ? 60 : 16,
+    minHeight: 80,
   },
   headerContent: {
     flexDirection: 'row',
@@ -172,25 +243,82 @@ const styles = StyleSheet.create({
   inboxInfoContainer: {
     flex: 1,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 8,
+  },
   pageTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: colors.text,
-    marginBottom: 2,
+    color: '#fff',
   },
   pageTitleMobile: {
-    fontSize: 26,
-    fontWeight: '800',
+    fontSize: 22,
+    fontWeight: '700',
   },
-  inboxTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.textSecondary,
-    marginBottom: 1,
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  inboxTitleMobile: {
+  statBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+  },
+  statText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  emptyContainerMobile: {
+    paddingHorizontal: 24,
+  },
+  emptyIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+    shadowColor: '#007AFF',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  emptyText: {
     fontSize: 18,
     fontWeight: '600',
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  emptyTextMobile: {
+    fontSize: 20,
+    marginBottom: 12,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: colors.placeholder,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  emptySubtextMobile: {
+    fontSize: 16,
+    lineHeight: 24,
   },
   listContainer: {
     flex: 1,

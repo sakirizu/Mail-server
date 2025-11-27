@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
 
 const HelpSupportScreen = ({ navigation }) => {
@@ -11,9 +12,10 @@ const HelpSupportScreen = ({ navigation }) => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.backIcon}>←</Text>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>❓ Help & Support</Text>
+        <Ionicons name="help-circle" size={24} color={colors.text} style={{ marginRight: 8 }} />
+        <Text style={styles.headerTitle}>Help & Support</Text>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -28,7 +30,7 @@ const HelpSupportScreen = ({ navigation }) => {
             activeOpacity={0.8}
           >
             <View style={[styles.optionIconContainer, styles.guideIconContainer]}>
-              <Text style={styles.optionIcon}>📚</Text>
+              <Ionicons name="library" size={32} color={colors.primary} />
             </View>
             <View style={styles.optionContent}>
               <Text style={styles.optionTitle}>User Guide</Text>
@@ -42,7 +44,7 @@ const HelpSupportScreen = ({ navigation }) => {
                 <Text style={styles.featureItem}>• Video tutorials</Text>
               </View>
             </View>
-            <Text style={styles.optionArrow}>→</Text>
+            <Ionicons name="chevron-forward" size={24} color={colors.text} />
           </TouchableOpacity>
 
           {/* Help Option */}
@@ -52,7 +54,7 @@ const HelpSupportScreen = ({ navigation }) => {
             activeOpacity={0.8}
           >
             <View style={styles.optionIconContainer}>
-              <Text style={styles.optionIcon}>❓</Text>
+              <Ionicons name="help-circle" size={32} color={colors.primary} />
             </View>
             <View style={styles.optionContent}>
               <Text style={styles.optionTitle}>Help & FAQ</Text>
@@ -66,7 +68,7 @@ const HelpSupportScreen = ({ navigation }) => {
                 <Text style={styles.featureItem}>• Security troubleshooting</Text>
               </View>
             </View>
-            <Text style={styles.optionArrow}>→</Text>
+            <Ionicons name="chevron-forward" size={24} color={colors.text} />
           </TouchableOpacity>
 
           {/* Support Option */}
@@ -135,12 +137,16 @@ const HelpSupportScreen = ({ navigation }) => {
 
         {/* Emergency Contact */}
         <View style={styles.emergencySection}>
-          <Text style={styles.emergencyTitle}>🚨 Emergency Help</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+            <Ionicons name="alert-circle" size={24} color="#FF3B30" style={{ marginRight: 8 }} />
+            <Text style={styles.emergencyTitle}>Emergency Help</Text>
+          </View>
           <Text style={styles.emergencyText}>
             If you have urgent technical issues, call us immediately:
           </Text>
           <TouchableOpacity style={styles.emergencyButton}>
-            <Text style={styles.emergencyButtonText}>📞 +81-000-0000-0000</Text>
+            <Ionicons name="call" size={20} color="#fff" style={{ marginRight: 8 }} />
+            <Text style={styles.emergencyButtonText}>+81-000-0000-0000</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -158,7 +164,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   backButton: {
     marginRight: 15,
@@ -166,13 +174,13 @@ const styles = StyleSheet.create({
   },
   backIcon: {
     fontSize: 24,
-    color: colors.white,
+    color: colors.text,
     fontWeight: 'bold',
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: colors.white,
+    color: colors.text,
   },
   content: {
     flex: 1,

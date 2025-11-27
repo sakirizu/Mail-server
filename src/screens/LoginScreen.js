@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, useWindowDimensions, ScrollView, Modal, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
 import { useAuth } from '../context/AuthContext';
+import NotificationModal from '../components/NotificationModal';
+import { API_ENDPOINTS } from '../config/api';
 
 export default function LoginScreen({ navigation }) {
   const [isSignup, setIsSignup] = useState(false);
@@ -12,6 +15,10 @@ export default function LoginScreen({ navigation }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [stayLoggedIn, setStayLoggedIn] = useState(false);
+  
+  // Notification state
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationData, setNotificationData] = useState({});
   
   // 2FA Setup states
   const [showTwoFASetup, setShowTwoFASetup] = useState(false);
@@ -24,7 +31,12 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     if (!username || !password) {
-      Alert.alert('Error', 'Please enter both username and password');
+      setNotificationData({
+        type: 'error',
+        title: 'エラー',
+        message: 'ユーザー名とパスワードを入力してください'
+      });
+      setShowNotification(true);
       return;
     }
     
@@ -43,7 +55,12 @@ export default function LoginScreen({ navigation }) {
         };
         
         login(demoUser);
-        Alert.alert('Demo Mode!', 'Logged in as demo user');
+        setNotificationData({
+          type: 'success',
+          title: '成功',
+          message: 'デモユーザーとしてログインしました'
+        });
+        setShowNotification(true);
         setLoading(false);
       }, 1000);
       
@@ -53,7 +70,7 @@ export default function LoginScreen({ navigation }) {
     setLoading(true);
     
     try {
-      const res = await fetch('http://localhost:3001/api/auth/login', {
+      const res = await fetch(API_ENDPOINTS.LOGIN, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
@@ -61,7 +78,13 @@ export default function LoginScreen({ navigation }) {
       
       if (!res.ok) {
         const errorData = await res.json();
-        Alert.alert('Error', errorData?.error || `Server error: ${res.status}`);
+        setNotificationData({
+          type: 'error',
+          title: 'ログインエラー',
+          message: errorData?.error || 'ユーザー名またはパスワードが正しくありません'
+        });
+        setShowNotification(true);
+        setLoading(false);
         return;
       }
       
@@ -75,25 +98,40 @@ export default function LoginScreen({ navigation }) {
       } else if (data.token && data.user) {
         const userWithToken = { ...data.user, token: data.token };
         
-        // Stay logged in logic
+        // Stay logged in logic - save token instead of password
         if (stayLoggedIn) {
           await AsyncStorage.setItem('stayLoggedIn', 'true');
-          await AsyncStorage.setItem('userCredentials', JSON.stringify({
-            username,
-            password
-          }));
+          await AsyncStorage.setItem('savedUserToken', data.token);
+          await AsyncStorage.setItem('savedUser', JSON.stringify(data.user));
         } else {
           await AsyncStorage.removeItem('stayLoggedIn');
-          await AsyncStorage.removeItem('userCredentials');
+          await AsyncStorage.removeItem('savedUserToken');
+          await AsyncStorage.removeItem('savedUser');
+          await AsyncStorage.removeItem('userCredentials'); // Remove old credentials
         }
         
         login(userWithToken);
-        Alert.alert('Muvaffaqiyat!', 'Hisobingizga kirildi!');
+        setNotificationData({
+          type: 'success',
+          title: 'ログイン成功',
+          message: 'アカウントに正常にログインしました'
+        });
+        setShowNotification(true);
       } else {
-        Alert.alert('Xatolik', data?.error || 'Login amalga oshmadi');
+        setNotificationData({
+          type: 'error',
+          title: 'エラー',
+          message: data?.error || 'ログインに失敗しました'
+        });
+        setShowNotification(true);
       }
     } catch (e) {
-      Alert.alert('Xatolik', 'Server bilan bog\'lanishda xatolik. Server ishga tushganligini tekshiring.');
+      setNotificationData({
+        type: 'error',
+        title: '接続エラー',
+        message: 'サーバーとの接続に失敗しました。サーバーが起動していることを確認してください。'
+      });
+      setShowNotification(true);
     } finally {
       setLoading(false);
     }
@@ -123,7 +161,7 @@ export default function LoginScreen({ navigation }) {
 
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:3001/api/auth/signup', {
+      const res = await fetch(API_ENDPOINTS.SIGNUP, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name.trim(), username: username.trim(), password })
@@ -196,31 +234,6 @@ export default function LoginScreen({ navigation }) {
     resetForm();
   };
 
-  // Test data filler
-  const fillTestData = () => {
-    setUsername('test');
-    setPassword('123456');
-  };
-
-  // Demo data filler
-  const fillDemoData = () => {
-    setUsername('demo');
-    setPassword('demo123');
-  };
-
-  // Clear AsyncStorage
-  const clearStorage = async () => {
-    try {
-      await AsyncStorage.clear();
-      Alert.alert('Tozalandi', 'Ma\'lumotlar tozalandi. Ilovani qayta ishga tushiring.', [
-        { text: 'OK', onPress: () => {} }
-      ]);
-    } catch (error) {
-      console.error('Error clearing storage:', error);
-      Alert.alert('Xato', 'Ma\'lumotlarni tozalashda xato yuz berdi.');
-    }
-  };
-
   return (
     <ScrollView contentContainerStyle={[styles.container, isMobile && styles.containerMobile]}>
       <View style={[styles.formContainer, isMobile && styles.formContainerMobile]}>
@@ -270,7 +283,7 @@ export default function LoginScreen({ navigation }) {
                 onPress={() => setStayLoggedIn(!stayLoggedIn)}
               >
                 <View style={[styles.checkboxBox, stayLoggedIn && styles.checkboxChecked]}>
-                  {stayLoggedIn && <Text style={styles.checkboxTick}>✓</Text>}
+                  {stayLoggedIn && <Ionicons name="checkmark" size={16} color="#fff" />}
                 </View>
                 <Text style={styles.checkboxText}>ログイン状態を保持</Text>
               </TouchableOpacity>
@@ -317,34 +330,6 @@ export default function LoginScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* Test Login Button - for debugging */}
-        {!isSignup && (
-          <View>
-            <TouchableOpacity 
-              style={styles.testButton}
-              onPress={fillTestData}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.testButtonText}>📝 テストデータを入力 (test/123456)</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.demoButton}
-              onPress={fillDemoData}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.demoButtonText}>🎭 デモアカウント (demo/demo123)</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.clearButton}
-              onPress={clearStorage}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.clearButtonText}>🧹 データをクリア</Text>
-            </TouchableOpacity>
-          </View>
-        )}
       </View>
 
       {/* 2FA Setup Modal */}
@@ -384,7 +369,10 @@ export default function LoginScreen({ navigation }) {
               {/* Backup Codes Section */}
               {twoFAData?.twoFASetup?.backupCodes && (
                 <View style={styles.backupCodesSection}>
-                  <Text style={styles.sectionTitle}>🔐 Backup Kodlar</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                    <Ionicons name="lock-closed" size={20} color={colors.primary} style={{ marginRight: 8 }} />
+                    <Text style={styles.sectionTitle}>Backup Kodlar</Text>
+                  </View>
                   <Text style={styles.backupCodesWarning}>
                     ⚠️ Bu kodlarni xavfsiz saqlang! Telefon yo'qolsa kerak bo'ladi
                   </Text>
@@ -455,6 +443,17 @@ export default function LoginScreen({ navigation }) {
           </View>
         </View>
       </Modal>
+      
+      {/* Notification Modal */}
+      <NotificationModal
+        visible={showNotification}
+        type={notificationData.type}
+        title={notificationData.title}
+        message={notificationData.message}
+        onClose={() => setShowNotification(false)}
+        autoClose={true}
+        autoCloseDelay={3000}
+      />
     </ScrollView>
   );
 }
@@ -832,51 +831,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     borderWidth: 1,
     borderColor: '#ffeaa7',
-  },
-  testButton: {
-    marginTop: 20,
-    backgroundColor: '#E3F2FD',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#2196F3',
-    alignItems: 'center',
-  },
-  testButtonText: {
-    fontSize: 14,
-    color: '#1976D2',
-    fontWeight: '500',
-  },
-  demoButton: {
-    marginTop: 10,
-    backgroundColor: '#F3E5F5',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#9C27B0',
-    alignItems: 'center',
-  },
-  demoButtonText: {
-    fontSize: 14,
-    color: '#7B1FA2',
-    fontWeight: '500',
-  },
-  clearButton: {
-    marginTop: 10,
-    backgroundColor: '#FFEBEE',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#F44336',
-    alignItems: 'center',
-  },
-  clearButtonText: {
-    fontSize: 14,
-    color: '#D32F2F',
-    fontWeight: '500',
   },
 
   // Checkbox Styles

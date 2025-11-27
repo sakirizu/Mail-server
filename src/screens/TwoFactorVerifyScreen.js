@@ -353,7 +353,8 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
           style={styles.backButton}
           onPress={handleBack}
         >
-          <Text style={styles.backButtonText}>← Orqaga qaytish</Text>
+          <Ionicons name="arrow-back" size={20} color="#007AFF" style={{ marginRight: 6 }} />
+          <Text style={styles.backButtonText}>Orqaga qaytish</Text>
         </TouchableOpacity>
       </View>
     </View>

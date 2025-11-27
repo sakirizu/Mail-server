@@ -1,15 +1,20 @@
 import React, { useState, Fragment, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TextInput, Button, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
 import { useAuth } from '../context/AuthContext';
 import ConfirmModal from '../components/ConfirmModal';
 import NotificationModal from '../components/NotificationModal';
 
-export default function ComposeScreen() {
+export default function ComposeScreen({ route }) {
   const { user } = useAuth();
-  const [to, setTo] = useState('');
-  const [subject, setSubject] = useState('');
-  const [body, setBody] = useState('');
+  
+  // Get params from navigation (for Reply/Forward)
+  const params = route?.params || {};
+  
+  const [to, setTo] = useState(params.to || '');
+  const [subject, setSubject] = useState(params.subject || '');
+  const [body, setBody] = useState(params.body || '');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [emailPreview, setEmailPreview] = useState(null);
   const [showNotification, setShowNotification] = useState(false);
@@ -202,7 +207,10 @@ export default function ComposeScreen() {
         keyboardShouldPersistTaps="handled"
         style={{ flex: 1 }}
       >
-        <Text style={styles.title}>✏️ メール作成</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
+          <Ionicons name="create" size={24} color={colors.primary} style={{ marginRight: 8 }} />
+          <Text style={styles.title}>メール作成</Text>
+        </View>
         <Text style={styles.label}>宛先:</Text>
         <TextInput
           style={styles.input}
@@ -263,8 +271,8 @@ export default function ComposeScreen() {
     flex: 1,
     backgroundColor: colors.background,
     padding: 24,
-    width: '100%', // web uchun max-width emas, width: 100%
-    width: Platform.OS === 'web' ? undefined : 1000,
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 1000 : undefined,
     alignSelf: 'center',
   },
   title: {

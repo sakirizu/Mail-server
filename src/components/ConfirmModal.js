@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
 
 const ConfirmModal = ({ visible, onClose, onConfirm, title, message, preview }) => {
@@ -24,7 +25,10 @@ const ConfirmModal = ({ visible, onClose, onConfirm, title, message, preview }) 
             {/* Email Preview */}
             {preview && (
               <View style={styles.preview}>
-                <Text style={styles.previewTitle}>📧 メールプレビュー:</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                  <Ionicons name="mail" size={18} color={colors.primary} style={{ marginRight: 8 }} />
+                  <Text style={styles.previewTitle}>メールプレビュー:</Text>
+                </View>
                 
                 <View style={styles.previewField}>
                   <Text style={styles.fieldLabel}>宛先:</Text>
@@ -69,11 +73,13 @@ const ConfirmModal = ({ visible, onClose, onConfirm, title, message, preview }) 
           {/* Buttons */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-              <Text style={styles.cancelButtonText}>❌ キャンセル</Text>
+              <Ionicons name="close-circle" size={18} color="#fff" style={{ marginRight: 6 }} />
+              <Text style={styles.cancelButtonText}>キャンセル</Text>
             </TouchableOpacity>
             
             <TouchableOpacity style={styles.confirmButton} onPress={onConfirm}>
-              <Text style={styles.confirmButtonText}>✅ メールを送信</Text>
+              <Ionicons name="checkmark-circle" size={18} color="#fff" style={{ marginRight: 6 }} />
+              <Text style={styles.confirmButtonText}>メールを送信</Text>
             </TouchableOpacity>
           </View>
         </View>

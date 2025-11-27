@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert, TextInput, Modal, Switch } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
 import { useAuth } from '../context/AuthContext';
 import { fetchEmailStatistics, getWhitelistSettings, updateWhitelistMode, addWhitelistDomain, removeWhitelistDomain } from '../services/mailService';
@@ -249,7 +250,7 @@ const StatisticsScreen = ({ navigation }) => {
             onPress={() => navigation?.goBack()}
             activeOpacity={0.7}
           >
-            <Text style={styles.backIcon}>←</Text>
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>統計</Text>
         </View>
@@ -270,7 +271,7 @@ const StatisticsScreen = ({ navigation }) => {
           onPress={() => navigation?.goBack()}
           activeOpacity={0.7}
         >
-          <Text style={styles.backIcon}>←</Text>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>統計</Text>
       </View>
@@ -279,7 +280,7 @@ const StatisticsScreen = ({ navigation }) => {
         {/* Email Statistics */}
         <View style={styles.statsCard}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardIcon}>📧</Text>
+            <Ionicons name="mail" size={24} color={colors.primary} />
             <Text style={styles.cardTitle}>メール統計</Text>
           </View>
           
@@ -298,7 +299,7 @@ const StatisticsScreen = ({ navigation }) => {
         {/* Spam Protection */}
         <View style={styles.statsCard}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardIcon}>🛡️</Text>
+            <Ionicons name="shield" size={24} color={colors.primary} style={{ marginRight: 8 }} />
             <Text style={styles.cardTitle}>迷惑メール対策</Text>
           </View>
           
@@ -331,7 +332,7 @@ const StatisticsScreen = ({ navigation }) => {
         {/* Security & Access */}
         <View style={styles.statsCard}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardIcon}>🔐</Text>
+            <Ionicons name="lock-closed" size={24} color={colors.primary} style={{ marginRight: 8 }} />
             <Text style={styles.cardTitle}>セキュリティとプライバシー</Text>
           </View>
           

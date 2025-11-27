@@ -311,14 +311,20 @@ export default function TwoFactorAuthScreen() {
 
       {/* TOTP Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🔐 Google Authenticator / Authy (TOTP)</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+          <Ionicons name="lock-closed" size={22} color={colors.primary} style={{ marginRight: 8 }} />
+          <Text style={styles.sectionTitle}>Google Authenticator / Authy (TOTP)</Text>
+        </View>
         <Text style={styles.sectionDescription}>
           Mobil ilovals orqali vaqtga asoslangan kod yaratish
         </Text>
         
         {twoFAStatus.totpEnabled ? (
           <View style={styles.enabledSection}>
-            <Text style={styles.enabledText}>✅ TOTP yoqilgan</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+              <Ionicons name="checkmark-circle" size={20} color="#34C759" style={{ marginRight: 8 }} />
+              <Text style={styles.enabledText}>TOTP yoqilgan</Text>
+            </View>
             <View style={styles.actionSection}>
               <TextInput
                 style={styles.passwordInput}
@@ -405,7 +411,10 @@ export default function TwoFactorAuthScreen() {
       {/* 2FA Requirement Section */}
       {(twoFAStatus.totpEnabled || twoFAStatus.webauthnEnabled) && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>⚙️ 2FA Sozlamalari</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <Ionicons name="settings" size={22} color={colors.primary} style={{ marginRight: 8 }} />
+            <Text style={styles.sectionTitle}>2FA Sozlamalari</Text>
+          </View>
           
           <View style={styles.requireSection}>
             <Text style={styles.requireText}>

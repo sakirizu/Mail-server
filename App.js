@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { View, StyleSheet, StatusBar, useWindowDimensions, Platform, TouchableOpacity, Text, Animated } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
 import AppNavigator from "./src/navigation/AppNavigator";
 import { colors } from "./src/styles/theme";
 import TopBar from "./src/components/TopBar";
@@ -136,7 +137,7 @@ function MainApp({ navigationRef }) {
         onPress={() => setComposeModalVisible(true)}
         activeOpacity={0.8}
       >
-        <Text style={styles.floatingButtonIcon}>✏️</Text>
+        <Ionicons name="create" size={24} color="#fff" />
       </TouchableOpacity>
     
       
@@ -183,11 +184,11 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.primary,
+    backgroundColor: '#007AFF',
     justifyContent: "center",
     alignItems: "center",
     elevation: 8,
-    shadowColor: "#000",
+    shadowColor: "#007AFF",
     shadowOffset: {
       width: 0,
       height: 4,
@@ -213,11 +214,11 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.primary,
+    backgroundColor: '#007AFF',
     justifyContent: "center",
     alignItems: "center",
     elevation: 8,
-    shadowColor: "#000",
+    shadowColor: "#007AFF",
     shadowOffset: {
       width: 0,
       height: 4,

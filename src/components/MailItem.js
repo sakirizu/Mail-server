@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
 
 // Helper function to format time ago
@@ -71,26 +73,57 @@ const MailItem = ({ mail, onPress, onRead }) => {
         !mail.read_status && styles.unread
       ]} 
       onPress={handlePress}
-      activeOpacity={0.6}
-      android_ripple={{ color: colors.primary + '15', borderless: false }}
+      activeOpacity={0.7}
+      android_ripple={{ color: '#007AFF15', borderless: false }}
     >
+      {/* Unread indicator gradient */}
+      {!mail.read_status && (
+        <LinearGradient
+          colors={['#007AFF', '#0051D5']}
+          style={styles.unreadIndicator}
+        />
+      )}
+      
       <View style={[styles.leftSection, isMobile && styles.leftSectionMobile]}>
-        <View style={[styles.avatar, isMobile && styles.avatarMobile]}>
+        <LinearGradient
+          colors={
+            !mail.read_status 
+              ? ['#007AFF', '#0051D5'] 
+              : ['#8E8E93', '#C7C7CC']
+          }
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.avatar, isMobile && styles.avatarMobile]}
+        >
           <Text style={[styles.avatarText, isMobile && styles.avatarTextMobile]}>
             {mail.sender?.charAt(0)?.toUpperCase() || 'U'}
           </Text>
-        </View>
+        </LinearGradient>
       </View>
+      
       <View style={[styles.contentSection, isMobile && styles.contentSectionMobile]}>
         <View style={[styles.header, isMobile && styles.headerMobile]}>
           <View style={styles.senderContainer}>
             <Text style={[styles.sender, isMobile && styles.senderMobile, !mail.read_status && styles.senderUnread]} numberOfLines={1}>
               {mail.sender}
             </Text>
+            {!mail.read_status && (
+              <View style={styles.newBadge}>
+                <Text style={styles.newBadgeText}>NEW</Text>
+              </View>
+            )}
           </View>
-          <Text style={[styles.time, isMobile && styles.timeMobile]}>
-            {formatTimeAgo(mail.created_at || mail.date)}
-          </Text>
+          <View style={styles.timeContainer}>
+            <Ionicons 
+              name="time-outline" 
+              size={14} 
+              color="#8E8E93" 
+              style={{ marginRight: 4 }}
+            />
+            <Text style={[styles.time, isMobile && styles.timeMobile]}>
+              {formatTimeAgo(mail.created_at || mail.date)}
+            </Text>
+          </View>
         </View>
         <Text style={[styles.subject, isMobile && styles.subjectMobile, !mail.read_status && styles.subjectUnread]} numberOfLines={1}>
           {mail.subject}
@@ -107,147 +140,161 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
     backgroundColor: colors.surface,
     marginHorizontal: 8,
-    marginVertical: 2,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  containerDesktop: {
-    borderRadius: 0,
-    marginHorizontal: 0,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e8eaed',
-  },
-  containerMobile: {
-    padding: 20,
-    marginHorizontal: 8,    // Reduced margin for better screen usage
     marginVertical: 4,
-    borderRadius: 16,
-    elevation: 3,
-    shadowColor: colors.shadow,
+    borderRadius: 12,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
-    borderBottomWidth: 0,
-    minHeight: 96,          // Increased height for better touch targets
+    elevation: 2,
+    borderLeftWidth: 0,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  containerDesktop: {
+    borderRadius: 8,
+    marginHorizontal: 0,
+    elevation: 1,
+  },
+  containerMobile: {
+    padding: 16,
+    marginHorizontal: 8,
+    marginVertical: 4,
+    borderRadius: 16,
+    elevation: 3,
+    shadowOpacity: 0.1,
+    minHeight: 100,
     backgroundColor: colors.androidSurface,
+  },
+  unread: {
+    backgroundColor: '#F8F9FF',
+  },
+  unreadIndicator: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
   },
   leftSection: {
     marginRight: 16,
     justifyContent: 'center',
   },
   leftSectionMobile: {
-    marginRight: 20,
+    marginRight: 16,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.primary,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarMobile: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     elevation: 2,
   },
   avatarText: {
     color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
+    fontWeight: '700',
+    fontSize: 18,
   },
   avatarTextMobile: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
   },
   contentSection: {
     flex: 1,
   },
   contentSectionMobile: {
     flex: 1,
-    minHeight: 64,
+    minHeight: 68,
     justifyContent: 'space-between',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   headerMobile: {
-    marginBottom: 6,
-    alignItems: 'flex-start',
-  },
-  subject: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    color: colors.text,
-    marginBottom: 4,
-  },
-  subjectMobile: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 6,
-    lineHeight: 22,
-  },
-  sender: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: '600',
-    flex: 1,
-  },
-  senderMobile: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  time: {
-    color: colors.placeholder,
-    fontSize: 12,
-  },
-  timeMobile: {
-    fontSize: 14,
-    position: 'absolute',
-    right: 0,
-    top: 0,
-  },
-  snippet: {
-    color: colors.placeholder,
-    fontSize: 14,
-    lineHeight: 18,
-  },
-  snippetMobile: {
-    fontSize: 15,
-    lineHeight: 20,
-    color: colors.textSecondary,
-  },
-  unread: {
-    backgroundColor: 'rgba(0, 0, 204, 0.05)', // Very light blue background for unread emails
-    borderLeftWidth: 4,
-    borderLeftColor: colors.primary,
+    marginBottom: 8,
   },
   senderContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    marginRight: 8,
+    gap: 8,
+  },
+  sender: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: '600',
+    flex: 1,
+  },
+  senderMobile: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   senderUnread: {
     fontWeight: '700',
+    color: '#1D1D1F',
+  },
+  newBadge: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  newBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  timeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  time: {
+    color: '#8E8E93',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  timeMobile: {
+    fontSize: 13,
+  },
+  subject: {
+    fontWeight: '600',
+    fontSize: 16,
     color: colors.text,
+    marginBottom: 6,
+  },
+  subjectMobile: {
+    fontSize: 17,
+    fontWeight: '600',
+    marginBottom: 6,
+    lineHeight: 22,
   },
   subjectUnread: {
     fontWeight: '700',
-    color: colors.text,
+    color: '#1D1D1F',
   },
-
+  snippet: {
+    color: '#8E8E93',
+    fontSize: 14,
+    lineHeight: 18,
+  },
+  snippetMobile: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#8E8E93',
+  },
 });
 
 export default MailItem;

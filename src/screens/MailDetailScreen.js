@@ -1,34 +1,60 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions, Alert, Modal } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
-import { AuthContext } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config/api';
 
 const MailDetailScreen = ({ route, navigation }) => {
-  const { mail } = route.params || {};
+  const { mail: rawMail } = route.params || {};
   const { width } = useWindowDimensions();
   const isDesktop = width >= 900;
   const [showMenu, setShowMenu] = useState(false);
-  const { token } = useContext(AuthContext);
+  const { user } = useAuth();
+  const token = user?.token;
+
+  // Normalize mail data - handle different field names from MongoDB
+  const mail = rawMail ? {
+    id: rawMail.id || rawMail._id,
+    subject: rawMail.subject || '(No Subject)',
+    sender: rawMail.sender || rawMail.from,
+    body: rawMail.body || rawMail.snippet || '',
+    date: rawMail.date || rawMail.created_at || rawMail.createdAt,
+    read_status: rawMail.read_status || rawMail.isRead || false,
+    isSpam: rawMail.isSpam || rawMail.folder === 'spam' || false,
+    phishingScore: rawMail.phishingScore || 0,
+    phishingReasons: rawMail.phishingReasons || [],
+    ...rawMail
+  } : null;
+
+  // Debug: Log mail data
+  useEffect(() => {
+    console.log('📧 Mail Detail - Received mail data:', mail);
+    if (!mail) {
+      console.error('❌ No mail data received!');
+    }
+  }, []);
 
   // Mark email as read when opened
   useEffect(() => {
-    if (mail && mail.id && token) {
-      markAsRead(mail.id);
+    const mailId = mail?.id || mail?._id;
+    if (mail && mailId && token) {
+      markAsRead(mailId);
     }
   }, [mail, token]);
 
   const markAsRead = async (mailId) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/mails/${mailId}/read`, {
+      const response = await fetch(`${API_BASE_URL}/api/mails/${mailId}/read`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-      // Don't need to handle response since it's automatic
+      console.log('✅ Marked as read:', mailId);
     } catch (error) {
-      console.error('Error marking email as read:', error);
+      console.error('❌ Error marking email as read:', error);
     }
   };
   
@@ -83,17 +109,26 @@ const MailDetailScreen = ({ route, navigation }) => {
   };
 
   const handleReply = () => {
+    const sender = mail.sender || mail.from;
+    const originalSubject = mail.subject || '(No Subject)';
+    const originalBody = mail.body || mail.snippet || '';
+    
     navigation?.navigate('Compose', {
-      to: mail.sender,
-      subject: `Re: ${mail.subject}`,
-      body: `\n\n--- Original Message ---\nFrom: ${mail.sender}\nSubject: ${mail.subject}\n\n${mail.snippet}`
+      to: sender,
+      subject: originalSubject.startsWith('Re: ') ? originalSubject : `Re: ${originalSubject}`,
+      body: `\n\n\n--- Original Message ---\nFrom: ${sender}\nDate: ${mail.date || 'Unknown'}\nSubject: ${originalSubject}\n\n${originalBody}`
     });
   };
 
   const handleForward = () => {
+    const sender = mail.sender || mail.from;
+    const originalSubject = mail.subject || '(No Subject)';
+    const originalBody = mail.body || mail.snippet || '';
+    
     navigation?.navigate('Compose', {
-      subject: `Fwd: ${mail.subject}`,
-      body: `\n\n--- Forwarded Message ---\nFrom: ${mail.sender}\nSubject: ${mail.subject}\n\n${mail.body || mail.snippet}`
+      to: '',
+      subject: originalSubject.startsWith('Fwd: ') ? originalSubject : `Fwd: ${originalSubject}`,
+      body: `\n\n\n--- Forwarded Message ---\nFrom: ${sender}\nDate: ${mail.date || 'Unknown'}\nSubject: ${originalSubject}\n\n${originalBody}`
     });
   };
 
@@ -106,7 +141,7 @@ const MailDetailScreen = ({ route, navigation }) => {
           onPress={() => navigation?.goBack()}
           activeOpacity={0.7}
         >
-          <Text style={styles.backIcon}>←</Text>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         
         <View style={styles.headerActions}>
@@ -115,21 +150,21 @@ const MailDetailScreen = ({ route, navigation }) => {
             onPress={() => handleMenuAction('archive')}
             activeOpacity={0.7}
           >
-            <Text style={styles.actionIcon}>🗃️</Text>
+            <Ionicons name="archive-outline" size={24} color={colors.text} />
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.actionButton} 
             onPress={() => handleMenuAction('delete')}
             activeOpacity={0.7}
           >
-            <Text style={styles.actionIcon}>🗑️</Text>
+            <Ionicons name="trash-outline" size={24} color={colors.text} />
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.actionButton} 
             onPress={() => setShowMenu(true)}
             activeOpacity={0.7}
           >
-            <Text style={styles.menuIcon}>⋮</Text>
+            <Ionicons name="ellipsis-vertical" size={24} color={colors.text} />
           </TouchableOpacity>
         </View>
       </View>
@@ -148,20 +183,20 @@ const MailDetailScreen = ({ route, navigation }) => {
         >
           <View style={styles.menuContainer}>
             <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuAction('markUnread')}>
-              <Text style={styles.menuItemIcon}>📧</Text>
+              <Ionicons name="mail-unread-outline" size={20} color={colors.text} style={{ marginRight: 12 }} />
               <Text style={styles.menuItemText}>Mark as unread</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuAction('addLabel')}>
-              <Text style={styles.menuItemIcon}>🏷️</Text>
+              <Ionicons name="pricetag-outline" size={20} color={colors.text} style={{ marginRight: 12 }} />
               <Text style={styles.menuItemText}>Add label</Text>
             </TouchableOpacity>
             <View style={styles.menuDivider} />
             <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuAction('delete')}>
-              <Text style={styles.menuItemIcon}>�️</Text>
+              <Ionicons name="trash-outline" size={20} color={colors.text} style={{ marginRight: 12 }} />
               <Text style={styles.menuItemText}>Delete</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuAction('print')}>
-              <Text style={styles.menuItemIcon}>🖨️</Text>
+              <Ionicons name="print-outline" size={20} color={colors.text} style={{ marginRight: 12 }} />
               <Text style={styles.menuItemText}>Print</Text>
             </TouchableOpacity>
           </View>
@@ -189,14 +224,33 @@ const MailDetailScreen = ({ route, navigation }) => {
           </View>
         </View>
 
-        <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.replyButton} onPress={handleReply}>
-            <Text style={styles.replyButtonText}>Reply</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.forwardButton} onPress={handleForward}>
-            <Text style={styles.forwardButtonText}>Forward</Text>
-          </TouchableOpacity>
-        </View>
+        {mail.isSpam && (
+          <View style={styles.spamWarning}>
+            <Ionicons name="warning" size={24} color="#FF3B30" />
+            <View style={styles.spamWarningText}>
+              <Text style={styles.spamWarningTitle}>⚠️ 迷惑メール (Spam)</Text>
+              <Text style={styles.spamWarningDesc}>
+                このメールは有害な可能性があります。返信や転送はできません。
+              </Text>
+              {mail.phishingScore > 0 && (
+                <Text style={styles.spamWarningScore}>
+                  検出スコア: {mail.phishingScore}%
+                </Text>
+              )}
+            </View>
+          </View>
+        )}
+
+        {!mail.isSpam && (
+          <View style={styles.actionButtons}>
+            <TouchableOpacity style={styles.replyButton} onPress={handleReply}>
+              <Text style={styles.replyButtonText}>Reply</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.forwardButton} onPress={handleForward}>
+              <Text style={styles.forwardButtonText}>Forward</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -206,6 +260,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+    width: '100%',
   },
   containerDesktop: {
     maxWidth: 1000,
@@ -406,6 +461,38 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border,
     marginVertical: 8,
     marginHorizontal: 16,
+  },
+  spamWarning: {
+    flexDirection: 'row',
+    backgroundColor: '#FFF3CD',
+    borderWidth: 1,
+    borderColor: '#FF9500',
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 16,
+    marginVertical: 12,
+    alignItems: 'flex-start',
+  },
+  spamWarningText: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  spamWarningTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FF3B30',
+    marginBottom: 4,
+  },
+  spamWarningDesc: {
+    fontSize: 14,
+    color: '#856404',
+    lineHeight: 20,
+  },
+  spamWarningScore: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+    fontStyle: 'italic',
   },
 });
 
