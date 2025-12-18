@@ -1,4 +1,4 @@
-# 📧 SMAIL - Secure Mail System (Secured by AI)
+﻿# 📧 SMAIL - Secure Mail System (Secured by AI)
 ### 🇯🇵 日本語要件定義書 / 🇺🇿 O'zbek tili Talabnomasi
 
 > **Last Updated / Oxirgi yangilanish**: 2024-12-18
@@ -93,3 +93,4 @@ npm start
 ## 📝 Authors / Mualliflar
 - **Sakir Izu** (@sakirizu)
 - **Collaborator** (@kosei)
+

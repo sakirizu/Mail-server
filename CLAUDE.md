@@ -19,10 +19,10 @@
 ## 🔍 NEW: 1.2.0 Technical Changes
 
 ### 🇯🇵 日本語の変更点:
-- **APIポートの統一**: 全てのフロントエンド通信を `3001` から `3002` に変更。
-- **エラーメッセージの日本語化**: ウズベク語/英語が混在していたUI・サーバーエラーを全て自然な日本語に修正。
-- **DB名の統一**: MySQL/MongoDBともにデータベース名を `ssmail` に固定。
-- **フィッシング検知ロジック**: `backend/server.js` の `checkPhishing` 関数内で、メール送信時に Python API を非同期で呼び出し。
+- [x] 2FA認証のバグ修正（ポート3002への統一、DBスキーマ不整合の解消）
+- [x] UIおよびメッセージの完全日本語化（2FA画面、エラーメッセージ含む）
+- [x] 迷惑メール判定（AI Phishing Detector）との連携疎通確認
+- [ ] 運用テスト・最終確認
 
 ### 🇺🇿 O'zbek tilidagi o'zgarishlar:
 - **API Porti**: Barcha frontend so'rovlari `3001` dan `3002` ga o'zgartirildi.
@@ -45,6 +45,20 @@ USE ssmail;
 - **Collections**: `mails`, `drafts`, `attachments`
 
 ---
+
+### サービスの起動順序
+1. **MongoDB**: `docker start ssmail_mongodb` (コンテナ名に注意)
+2. **AI Service**: `cd backend/phishing-detector` して `.\start.bat`
+3. **Backend**: `cd backend` して `npm start`
+4. **Frontend**: `npm start` (ルートディレクトリで実行)
+
+### 2FA認証の修正詳細
+- **ポート**: 全ての2FA関連APIを `3002` (バックエンド) に統合しました。
+- **DB名**: MySQLのデータベースを `ssmail` に統一。
+- **スキーマ**: `user_totp`, `user_2fa_settings` などのテーブルを再構築し、コードとカラム名を一致させました。
+
+### 迷惑メール振り分けの注意点
+AIサービス(`phishing-detector`)が停止している場合、全てのメールはデフォルトで「安全(inbox)」と判定されます。振り分けを機能させるには必ず `start.bat` を実行してください。
 
 ## 🚧 Development Rules / Qoidalar
 
