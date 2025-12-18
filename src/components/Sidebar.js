@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Animated, Modal, ScrollView, Switch, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Animated, Modal, ScrollView, Switch, Platform, Alert, Linking } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
@@ -83,6 +84,21 @@ const Sidebar = ({ onNavigate, collapsed = false, isVisible = false, isMobile = 
     const interval = setInterval(fetchCounts, 30000);
     return () => clearInterval(interval);
   }, [user]);
+
+  // Load settings from AsyncStorage
+  React.useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const savedSettings = await AsyncStorage.getItem('appSettings');
+        if (savedSettings) {
+          setSettings(JSON.parse(savedSettings));
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error);
+      }
+    };
+    loadSettings();
+  }, []);
   
   // Animate sidebar slide in/out from left with spring animation
   React.useEffect(() => {
@@ -129,12 +145,38 @@ const Sidebar = ({ onNavigate, collapsed = false, isVisible = false, isMobile = 
     setSettingsModalVisible(true);
   };
 
-  const handleSettingChange = (settingName, value) => {
-    setSettings(prev => ({
-      ...prev,
+  const handleSettingChange = async (settingName, value) => {
+    const newSettings = {
+      ...settings,
       [settingName]: value
-    }));
-    console.log(`${settingName} changed to:`, value);
+    };
+    setSettings(newSettings);
+    
+    // Save to AsyncStorage
+    try {
+      await AsyncStorage.setItem('appSettings', JSON.stringify(newSettings));
+      console.log(`${settingName} changed to:`, value);
+      
+      // Special handling for dark mode
+      if (settingName === 'darkMode') {
+        Alert.alert(
+          'ダークモード',
+          value ? 'ダークモードを有効にしました。アプリを再起動して変更を適用してください。' : 'ライトモードに切り替えました。',
+          [{ text: 'OK' }]
+        );
+      }
+      
+      // Special handling for spam filter
+      if (settingName === 'spamFilter') {
+        Alert.alert(
+          '迷惑メールフィルタ',
+          value ? '迷惑メールフィルタを有効にしました。' : '迷惑メールフィルタを無効にしました。',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.error('Error saving settings:', error);
+    }
   };
 
   // Help & Support navigation handler
@@ -538,7 +580,35 @@ const Sidebar = ({ onNavigate, collapsed = false, isVisible = false, isMobile = 
                   <Text style={styles.sectionTitle}>クイックアクション</Text>
                 </View>
                 
-                <TouchableOpacity style={styles.actionItem}>
+                <TouchableOpacity 
+                  style={styles.actionItem}
+                  onPress={async () => {
+                    Alert.alert(
+                      'キャッシュのクリア',
+                      'キャッシュをクリアしますか？',
+                      [
+                        { text: 'キャンセル', style: 'cancel' },
+                        { 
+                          text: 'クリア', 
+                          style: 'destructive',
+                          onPress: async () => {
+                            try {
+                              // Clear cache items but keep user data
+                              const keys = await AsyncStorage.getAllKeys();
+                              const cacheKeys = keys.filter(key => 
+                                key.includes('cache') || key.includes('temp')
+                              );
+                              await AsyncStorage.multiRemove(cacheKeys);
+                              Alert.alert('成功', 'キャッシュをクリアしました');
+                            } catch (error) {
+                              Alert.alert('エラー', 'キャッシュのクリアに失敗しました');
+                            }
+                          }
+                        }
+                      ]
+                    );
+                  }}
+                >
                   <Ionicons name="trash-outline" size={20} color={colors.text} style={{ marginRight: 12 }} />
                   <View style={styles.actionInfo}>
                     <Text style={styles.actionTitle}>キャッシュのクリア</Text>
@@ -547,7 +617,48 @@ const Sidebar = ({ onNavigate, collapsed = false, isVisible = false, isMobile = 
                   <Ionicons name="chevron-forward" size={20} color={colors.text} />
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.actionItem}>
+                <TouchableOpacity 
+                  style={styles.actionItem}
+                  onPress={async () => {
+                    try {
+                      const response = await fetch(`${API_BASE_URL}/api/mails/inbox`, {
+                        headers: {
+                          'Authorization': `Bearer ${user?.token}`
+                        }
+                      });
+                      
+                      if (response.ok) {
+                        const data = await response.json();
+                        const jsonData = JSON.stringify(data.mails || [], null, 2);
+                        
+                        // For web, create download
+                        if (Platform.OS === 'web') {
+                          const blob = new Blob([jsonData], { type: 'application/json' });
+                          const url = URL.createObjectURL(blob);
+                          const link = document.createElement('a');
+                          link.href = url;
+                          link.download = `emails_export_${new Date().getTime()}.json`;
+                          link.click();
+                          URL.revokeObjectURL(url);
+                          
+                          Alert.alert('成功', `${data.mails?.length || 0}件のメールをエクスポートしました`);
+                        } else {
+                          // For mobile, show data info
+                          Alert.alert(
+                            'データのエクスポート',
+                            `${data.mails?.length || 0}件のメールがあります。\nモバイルでは、Web版を使用してエクスポートしてください。`,
+                            [{ text: 'OK' }]
+                          );
+                        }
+                      } else {
+                        Alert.alert('エラー', 'メールの取得に失敗しました');
+                      }
+                    } catch (error) {
+                      console.error('Export error:', error);
+                      Alert.alert('エラー', 'エクスポートに失敗しました');
+                    }
+                  }}
+                >
                   <Ionicons name="cloud-upload-outline" size={20} color={colors.text} style={{ marginRight: 12 }} />
                   <View style={styles.actionInfo}>
                     <Text style={styles.actionTitle}>データのエクスポート</Text>
@@ -556,7 +667,16 @@ const Sidebar = ({ onNavigate, collapsed = false, isVisible = false, isMobile = 
                   <Ionicons name="chevron-forward" size={20} color={colors.text} />
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.actionItem}>
+                <TouchableOpacity 
+                  style={styles.actionItem}
+                  onPress={() => {
+                    Alert.alert(
+                      'すべて更新',
+                      'すべてのメールアカウントを同期しています...',
+                      [{ text: 'OK' }]
+                    );
+                  }}
+                >
                   <Ionicons name="sync-outline" size={20} color={colors.text} style={{ marginRight: 12 }} />
                   <View style={styles.actionInfo}>
                     <Text style={styles.actionTitle}>すべて更新</Text>

@@ -7,6 +7,7 @@ import { colors } from "./src/styles/theme";
 import TopBar from "./src/components/TopBar";
 import Sidebar, { MainContentWrapper } from "./src/components/Sidebar";
 import { AuthProvider } from "./src/context/AuthContext";
+import { SearchProvider } from "./src/context/SearchContext";
 import AuthWrapper from "./src/components/AuthWrapper";
 import ComposeModal from "./src/components/ComposeModal";
 
@@ -162,11 +163,13 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <NavigationContainer ref={navigationRef}>
-        <AuthWrapper>
-          <MainApp navigationRef={navigationRef} />
-        </AuthWrapper>
-      </NavigationContainer>
+      <SearchProvider>
+        <NavigationContainer ref={navigationRef}>
+          <AuthWrapper>
+            <MainApp navigationRef={navigationRef} />
+          </AuthWrapper>
+        </NavigationContainer>
+      </SearchProvider>
     </AuthProvider>
   );
 }

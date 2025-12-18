@@ -5,12 +5,14 @@ import { Ionicons } from '@expo/vector-icons';
 import MailItem from '../components/MailItem';
 import { colors } from '../styles/theme';
 import { useAuth } from '../context/AuthContext';
+import { useSearch } from '../context/SearchContext';
 import { API_BASE_URL } from '../config/api';
 
 export default function SentScreen() {
   const [emails, setEmails] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
+  const { searchQuery } = useSearch();
   const { user } = useAuth();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 900;
@@ -110,6 +112,22 @@ export default function SentScreen() {
     setRefreshing(false);
   };
 
+  // Filter emails based on search query
+  const filteredEmails = React.useMemo(() => {
+    if (!searchQuery || searchQuery.trim() === '') {
+      return emails;
+    }
+    
+    const query = searchQuery.toLowerCase().trim();
+    return emails.filter(email => {
+      const to = (email.to || '').toLowerCase();
+      const subject = (email.subject || '').toLowerCase();
+      const body = (email.body || email.snippet || '').toLowerCase();
+      
+      return to.includes(query) || subject.includes(query) || body.includes(query);
+    });
+  }, [emails, searchQuery]);
+
   const renderItem = ({ item }) => <MailItem mail={item} />;
 
   if (loading) {
@@ -175,7 +193,9 @@ export default function SentScreen() {
             <View style={styles.statsRow}>
               <View style={styles.statBadge}>
                 <Ionicons name="mail" size={16} color="#fff" />
-                <Text style={styles.statText}>{emails.length} 通</Text>
+                <Text style={styles.statText}>
+                  {searchQuery ? `${filteredEmails.length} / ${emails.length}` : `${emails.length}`} 通
+                </Text>
               </View>
             </View>
           </View>
@@ -183,7 +203,7 @@ export default function SentScreen() {
       </LinearGradient>
       <View style={[styles.listContainer, isMobile && styles.listContainerMobile]}>
         <FlatList
-          data={emails}
+          data={filteredEmails}
           renderItem={renderItem}
           keyExtractor={(item) => item.id?.toString() || item._id?.toString()}
           showsVerticalScrollIndicator={false}

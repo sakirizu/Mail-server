@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import MailItem from '../components/MailItem';
 import { colors } from '../styles/theme';
 import { useAuth } from '../context/AuthContext';
+import { useSearch } from '../context/SearchContext';
 import { API_BASE_URL } from '../config/api';
 
 export default function InboxScreen() {
@@ -12,6 +13,7 @@ export default function InboxScreen() {
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
   const [unreadCount, setUnreadCount] = React.useState(0);
+  const { searchQuery } = useSearch();
   const { user } = useAuth();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 900;
@@ -188,6 +190,22 @@ export default function InboxScreen() {
     />
   );
 
+  // Filter emails based on search query
+  const filteredEmails = React.useMemo(() => {
+    if (!searchQuery || searchQuery.trim() === '') {
+      return emails;
+    }
+    
+    const query = searchQuery.toLowerCase().trim();
+    return emails.filter(email => {
+      const from = (email.from || '').toLowerCase();
+      const subject = (email.subject || '').toLowerCase();
+      const body = (email.body || email.snippet || '').toLowerCase();
+      
+      return from.includes(query) || subject.includes(query) || body.includes(query);
+    });
+  }, [emails, searchQuery]);
+
   if (loading) {
     return (
       <View style={[styles.loadingContainer, isMobile && styles.loadingContainerMobile]}>
@@ -252,7 +270,9 @@ export default function InboxScreen() {
             <View style={styles.statsRow}>
               <View style={styles.statBadge}>
                 <Ionicons name="mail" size={16} color="#fff" />
-                <Text style={styles.statText}>{emails.length} 通</Text>
+                <Text style={styles.statText}>
+                  {searchQuery ? `${filteredEmails.length} / ${emails.length}` : `${emails.length}`} 通
+                </Text>
               </View>
               {unreadCount > 0 && (
                 <View style={[styles.statBadge, styles.unreadBadge]}>
@@ -268,7 +288,7 @@ export default function InboxScreen() {
       {/* Mail list */}
       <View style={[styles.listContainer, isMobile && styles.listContainerMobile]}>
         <FlatList
-          data={emails}
+          data={filteredEmails}
           renderItem={renderItem}
           keyExtractor={(item) => item.id?.toString() || item._id?.toString()}
           showsVerticalScrollIndicator={false}

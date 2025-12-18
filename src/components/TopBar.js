@@ -3,15 +3,16 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity, useWindowDimension
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
 import { useAuth } from '../context/AuthContext';
+import { useSearch } from '../context/SearchContext';
 
-const TopBar = ({ onMenuPress, onProfilePress, onStatisticsPress }) => {
+const TopBar = ({ onMenuPress, onProfilePress, onStatisticsPress, onSearch }) => {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 900;
   const isMobile = width < 768;
   
   const [profileMenuVisible, setProfileMenuVisible] = useState(false);
   const [accountSwitcherVisible, setAccountSwitcherVisible] = useState(false);
-  const [searchValue, setSearchValue] = useState('');
+  const { searchQuery, setSearchQuery } = useSearch();
   const [searchFocused, setSearchFocused] = useState(false);
   const [confirmationModalVisible, setConfirmationModalVisible] = useState(false);
   const [confirmationMessage, setConfirmationMessage] = useState('');
@@ -27,6 +28,15 @@ const TopBar = ({ onMenuPress, onProfilePress, onStatisticsPress }) => {
   const [isVerifying, setIsVerifying] = useState(false);
   
   const { user, accounts, signOut, signOutAll, switchAccount, removeAccount } = useAuth();
+
+  const handleSearch = () => {
+    // Search is already updated via context
+    console.log('Search:', searchQuery);
+  };
+
+  const handleSearchChange = (text) => {
+    setSearchQuery(text);
+  };
 
   // Confirmation modal functions
   const showConfirmation = (title, message, options) => {
@@ -285,8 +295,9 @@ const TopBar = ({ onMenuPress, onProfilePress, onStatisticsPress }) => {
           <TextInput
             style={styles.searchInput}
             placeholder="Search mail"
-            value={searchValue}
-            onChangeText={setSearchValue}
+            value={searchQuery}
+            onChangeText={handleSearchChange}
+            onSubmitEditing={handleSearch}
             onFocus={() => {
               console.log('Search input focused');
               setSearchFocused(true);
@@ -306,7 +317,7 @@ const TopBar = ({ onMenuPress, onProfilePress, onStatisticsPress }) => {
             returnKeyType="search"
             blurOnSubmit={true}
           />
-          <TouchableOpacity style={styles.searchButton}>
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
             <Ionicons 
               name="search" 
               size={20} 

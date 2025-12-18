@@ -15,6 +15,7 @@ import {
   Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as DocumentPicker from 'expo-document-picker';
 import { useAuth } from '../context/AuthContext';
 import { colors } from '../styles/theme';
 import ConfirmModal from './ConfirmModal';
@@ -29,6 +30,7 @@ export default function ComposeModal({ visible, onClose, replyTo = null, draftDa
     replyTo ? `Re: ${replyTo.subject}` : (draftData?.subject || '')
   );
   const [body, setBody] = useState(draftData?.body || '');
+  const [attachments, setAttachments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [emailPreview, setEmailPreview] = useState(null);
@@ -86,6 +88,34 @@ export default function ComposeModal({ visible, onClose, replyTo = null, draftDa
     onClose();
   };
 
+  const handlePickFile = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: '*/*',
+        copyToCacheDirectory: true,
+        multiple: false
+      });
+
+      if (result.type === 'success' || !result.canceled) {
+        const file = result.assets ? result.assets[0] : result;
+        setAttachments([...attachments, {
+          name: file.name,
+          uri: file.uri,
+          size: file.size,
+          type: file.mimeType || file.type
+        }]);
+        Alert.alert('成功', `${file.name} を添付しました`);
+      }
+    } catch (error) {
+      console.error('File picker error:', error);
+      Alert.alert('エラー', 'ファイルの選択に失敗しました');
+    }
+  };
+
+  const handleRemoveAttachment = (index) => {
+    setAttachments(attachments.filter((_, i) => i !== index));
+  };
+
   const handleSend = async () => {
     if (!to.trim() || !subject.trim() || !body.trim()) {
       Alert.alert('エラー', 'すべてのフィールドを入力してください');
@@ -116,6 +146,7 @@ export default function ComposeModal({ visible, onClose, replyTo = null, draftDa
           to: emailPreview.to,
           subject: emailPreview.subject,
           body: emailPreview.body,
+          attachments: attachments,
           confirmSend: true
         }),
       });
@@ -130,6 +161,7 @@ export default function ComposeModal({ visible, onClose, replyTo = null, draftDa
         setTo(replyTo?.from || '');
         setSubject(replyTo ? `Re: ${replyTo.subject}` : '');
         setBody('');
+        setAttachments([]);
         
         // Auto close notification and modal after 2 seconds
         setTimeout(() => {
@@ -214,7 +246,7 @@ export default function ComposeModal({ visible, onClose, replyTo = null, draftDa
                 <Ionicons name="close" size={20} color="#fff" />
               </TouchableOpacity>
               <Ionicons name="create" size={20} color="#fff" style={{ marginRight: 8 }} />
-              <Text style={styles.headerTitle}>新しいメッセージ</Text>
+              <Text style={styles.headerTitle}>メール作成</Text>
             </View>
             <View style={styles.headerRight}>
               <TouchableOpacity onPress={handleSaveDraft} style={styles.draftButton}>
@@ -254,12 +286,41 @@ export default function ComposeModal({ visible, onClose, replyTo = null, draftDa
                 style={[styles.input, styles.bodyInput]}
                 value={body}
                 onChangeText={setBody}
-                placeholder="メッセージをここに入力してください..."
+                placeholder="メッセージをここに入力してください... (リンクも追加できます)"
                 placeholderTextColor={colors.text.light}
                 multiline
                 numberOfLines={8}
                 textAlignVertical="top"
               />
+            </View>
+
+            {/* Attachments section */}
+            {attachments.length > 0 && (
+              <View style={styles.attachmentsContainer}>
+                <Text style={styles.attachmentsTitle}>
+                  <Ionicons name="attach" size={16} color={colors.text} /> 添付ファイル ({attachments.length})
+                </Text>
+                {attachments.map((file, index) => (
+                  <View key={index} style={styles.attachmentItem}>
+                    <Ionicons name="document" size={20} color={colors.primary} />
+                    <Text style={styles.attachmentName} numberOfLines={1}>{file.name}</Text>
+                    <Text style={styles.attachmentSize}>
+                      {(file.size / 1024).toFixed(1)} KB
+                    </Text>
+                    <TouchableOpacity onPress={() => handleRemoveAttachment(index)}>
+                      <Ionicons name="close-circle" size={24} color={colors.error} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Attach button */}
+            <View style={styles.actionsRow}>
+              <TouchableOpacity style={styles.attachButton} onPress={handlePickFile}>
+                <Ionicons name="attach" size={20} color={colors.primary} />
+                <Text style={styles.attachButtonText}>ファイル添付</Text>
+              </TouchableOpacity>
             </View>
           </ScrollView>
 
@@ -433,6 +494,65 @@ const styles = StyleSheet.create({
   bodyInput: {
     height: 120,
     textAlignVertical: 'top',
+  },
+  attachmentsContainer: {
+    marginTop: 10,
+    marginBottom: 16,
+    padding: 12,
+    backgroundColor: colors.surface,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border.DEFAULT,
+    width: Platform.OS === 'web' ? '70%' : '90%',
+    alignSelf: 'center',
+  },
+  attachmentsTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text.DEFAULT,
+    marginBottom: 8,
+  },
+  attachmentItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    backgroundColor: colors.background,
+    borderRadius: 6,
+    marginBottom: 6,
+  },
+  attachmentName: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 14,
+    color: colors.text.DEFAULT,
+  },
+  attachmentSize: {
+    fontSize: 12,
+    color: colors.placeholder,
+    marginRight: 8,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    gap: 12,
+    width: Platform.OS === 'web' ? '70%' : '90%',
+    alignSelf: 'center',
+  },
+  attachButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    gap: 6,
+  },
+  attachButtonText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: '600',
   },
   footer: {
     padding: 20,

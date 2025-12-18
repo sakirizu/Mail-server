@@ -144,29 +144,31 @@ const MailDetailScreen = ({ route, navigation }) => {
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         
-        <View style={styles.headerActions}>
-          <TouchableOpacity 
-            style={styles.actionButton} 
-            onPress={() => handleMenuAction('archive')}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="archive-outline" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.actionButton} 
-            onPress={() => handleMenuAction('delete')}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="trash-outline" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.actionButton} 
-            onPress={() => setShowMenu(true)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="ellipsis-vertical" size={24} color={colors.text} />
-          </TouchableOpacity>
-        </View>
+        {!mail.isSpam && (
+          <View style={styles.headerActions}>
+            <TouchableOpacity 
+              style={styles.actionButton} 
+              onPress={() => handleMenuAction('archive')}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="archive-outline" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.actionButton} 
+              onPress={() => handleMenuAction('delete')}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="trash-outline" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.actionButton} 
+              onPress={() => setShowMenu(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="ellipsis-vertical" size={24} color={colors.text} />
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
       
       {/* 3-Dot Menu Modal */}
@@ -218,7 +220,10 @@ const MailDetailScreen = ({ route, navigation }) => {
             </View>
           </View>
           <View style={styles.bodyContainer}>
-            <Text style={styles.body}>
+            <Text 
+              style={styles.body}
+              selectable={!mail.isSpam}
+            >
               {mail.body || mail.snippet || "Email content would be displayed here..."}
             </Text>
           </View>
@@ -230,11 +235,20 @@ const MailDetailScreen = ({ route, navigation }) => {
             <View style={styles.spamWarningText}>
               <Text style={styles.spamWarningTitle}>⚠️ 迷惑メール (Spam)</Text>
               <Text style={styles.spamWarningDesc}>
-                このメールは有害な可能性があります。返信や転送はできません。
+                このメールは有害な可能性があります。
+              </Text>
+              <Text style={styles.spamWarningDesc}>
+                • リンクやファイルを開くことはできません
+              </Text>
+              <Text style={styles.spamWarningDesc}>
+                • 返信や転送はできません
+              </Text>
+              <Text style={styles.spamWarningDesc}>
+                • テキストのコピーはできません
               </Text>
               {mail.phishingScore > 0 && (
                 <Text style={styles.spamWarningScore}>
-                  検出スコア: {mail.phishingScore}%
+                  フィッシング検出スコア: {mail.phishingScore}%
                 </Text>
               )}
             </View>

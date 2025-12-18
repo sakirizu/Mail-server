@@ -3,10 +3,12 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, RefreshContr
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
 import { useAuth } from '../context/AuthContext';
+import { useSearch } from '../context/SearchContext';
 import { API_BASE_URL } from '../config/api';
 
 const SpamScreen = ({ navigation }) => {
   const { user } = useAuth();
+  const { searchQuery } = useSearch();
   const [spamEmails, setSpamEmails] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -103,8 +105,28 @@ const SpamScreen = ({ navigation }) => {
     return date.toLocaleDateString('ja-JP');
   };
 
+  // Filter spam emails based on search query
+  const filteredSpamEmails = React.useMemo(() => {
+    if (!searchQuery || searchQuery.trim() === '') {
+      return spamEmails;
+    }
+    
+    const query = searchQuery.toLowerCase().trim();
+    return spamEmails.filter(email => {
+      const from = (email.from || email.sender || '').toLowerCase();
+      const subject = (email.subject || '').toLowerCase();
+      const body = (email.body || email.snippet || '').toLowerCase();
+      
+      return from.includes(query) || subject.includes(query) || body.includes(query);
+    });
+  }, [spamEmails, searchQuery]);
+
   const renderSpamItem = ({ item }) => (
-    <View style={styles.emailItem}>
+    <TouchableOpacity 
+      style={styles.emailItem}
+      onPress={() => navigation.navigate('MailDetail', { mail: item })}
+      activeOpacity={0.7}
+    >
       <View style={styles.emailHeader}>
         <View style={styles.senderInfo}>
           <Text style={styles.sender} numberOfLines={1}>{item.from || item.sender || '不明'}</Text>
@@ -116,12 +138,15 @@ const SpamScreen = ({ navigation }) => {
       <View style={styles.spamActions}>
         <TouchableOpacity 
           style={[styles.actionButton, styles.deleteButton]}
-          onPress={() => handleDeleteSpam(item.id || item._id)}
+          onPress={(e) => {
+            e.stopPropagation();
+            handleDeleteSpam(item.id || item._id);
+          }}
         >
           <Text style={styles.deleteText}>削除</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -133,7 +158,7 @@ const SpamScreen = ({ navigation }) => {
               迷惑メール
             </Text>
             <Text style={styles.inboxTitle}>
-              🚫 {spamEmails.length} 通
+              🚫 {searchQuery ? `${filteredSpamEmails.length} / ${spamEmails.length}` : `${spamEmails.length}`} 通
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="warning" size={16} color="#FF9500" style={{ marginRight: 4 }} />
@@ -147,14 +172,14 @@ const SpamScreen = ({ navigation }) => {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
-      ) : spamEmails.length === 0 ? (
+      ) : filteredSpamEmails.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="shield-checkmark" size={64} color="#34C759" />
-          <Text style={styles.emptyText}>迷惑メールはありません</Text>
+          <Ionicons name={searchQuery ? "search" : "shield-checkmark"} size={64} color={searchQuery ? colors.placeholder : "#34C759"} />
+          <Text style={styles.emptyText}>{searchQuery ? '検索結果がありません' : '迷惑メールはありません'}</Text>
         </View>
       ) : (
         <FlatList
-          data={spamEmails}
+          data={filteredSpamEmails}
           renderItem={renderSpamItem}
           keyExtractor={(item) => item.id || item._id}
           contentContainerStyle={styles.emailList}

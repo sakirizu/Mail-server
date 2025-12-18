@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator,
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config/api';
 
 const API_URL = 'http://localhost:3001/api/profile';
 
@@ -16,6 +17,7 @@ const ProfileScreen = ({ navigation }) => {
   const [error, setError] = useState('');
   const [inputFocused, setInputFocused] = useState(false);
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
+  const [stats, setStats] = useState({ total: 0, unread: 0, storage: '0 MB' });
 
   // Responsive calculations
   const { width, height } = screenData;
@@ -68,6 +70,64 @@ const ProfileScreen = ({ navigation }) => {
     };
 
     fetchProfile();
+  }, [user]);
+
+  // Load stats from API
+  useEffect(() => {
+    const loadStats = async () => {
+      if (!user || !user.token) return;
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/mails/stats`, {
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const storageGB = ((data.statistics?.total_size || 0) / (1024 * 1024 * 1024)).toFixed(1);
+          setStats({
+            total: data.statistics?.total_count || 0,
+            unread: data.statistics?.unread_count || 0,
+            storage: storageGB + 'GB'
+          });
+        }
+      } catch (error) {
+        console.error('Error loading stats:', error);
+      }
+    };
+    
+    loadStats();
+  }, [user]);
+
+  // Load stats from API
+  useEffect(() => {
+    const loadStats = async () => {
+      if (!user || !user.token) return;
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/mails/stats`, {
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const storageGB = ((data.statistics?.total_size || 0) / (1024 * 1024 * 1024)).toFixed(1);
+          setStats({
+            total: data.statistics?.total_count || 0,
+            unread: data.statistics?.unread_count || 0,
+            storage: storageGB + 'GB'
+          });
+        }
+      } catch (error) {
+        console.error('Error loading stats:', error);
+      }
+    };
+    
+    loadStats();
   }, [user]);
 
   const handleSave = async () => {
@@ -255,7 +315,7 @@ const ProfileScreen = ({ navigation }) => {
               <Text style={[
                 styles.statNumber,
                 isSmallPhone && styles.statNumberSmall
-              ]}>847</Text>
+              ]}>{stats.total}</Text>
               <Text style={[
                 styles.statLabel,
                 isSmallPhone && styles.statLabelSmall
@@ -266,7 +326,7 @@ const ProfileScreen = ({ navigation }) => {
               <Text style={[
                 styles.statNumber,
                 isSmallPhone && styles.statNumberSmall
-              ]}>23</Text>
+              ]}>{stats.unread}</Text>
               <Text style={[
                 styles.statLabel,
                 isSmallPhone && styles.statLabelSmall
@@ -277,7 +337,7 @@ const ProfileScreen = ({ navigation }) => {
               <Text style={[
                 styles.statNumber,
                 isSmallPhone && styles.statNumberSmall
-              ]}>4.2GB</Text>
+              ]}>{stats.storage}</Text>
               <Text style={[
                 styles.statLabel,
                 isSmallPhone && styles.statLabelSmall
@@ -296,7 +356,9 @@ const ProfileScreen = ({ navigation }) => {
             styles.logoutAction,
             isSmallPhone && styles.logoutActionSmall
           ]} onPress={handleLogout}>
-            <Text style={styles.actionIcon}>🚪</Text>
+            <View style={styles.actionIconContainer}>
+              <Ionicons name="log-out-outline" size={24} color="#FF3B30" />
+            </View>
             <View style={styles.actionContent}>
               <Text style={styles.logoutTitle}>サインアウト</Text>
               <Text style={styles.logoutDesc}>このアカウントからサインアウト</Text>
@@ -547,6 +609,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEE2E2',
     borderWidth: 1,
     borderColor: '#FECACA',
+  },
+  actionIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
   },
   actionIcon: {
     fontSize: 24,
