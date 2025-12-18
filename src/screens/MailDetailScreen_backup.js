@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions, Alert } from 'react-native';
 import { colors } from '../styles/theme';
 
@@ -297,3 +297,4 @@ const styles = StyleSheet.create({
 });
 
 export default MailDetailScreen;
+

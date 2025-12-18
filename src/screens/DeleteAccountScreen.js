@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+﻿import React, { useState, useContext } from 'react';
 import { 
   View, 
   Text, 
@@ -41,10 +41,10 @@ const DeleteAccountScreen = ({ navigation }) => {
         setBackupCodesAvailable(data.backupCodesAvailable);
         setShowConfirmModal(true);
       } else {
-        Alert.alert('Xatolik', data.error);
+        Alert.alert('エラー', data.error);
       }
     } catch (error) {
-      Alert.alert('Xatolik', 'Serverga ulanishda xatolik');
+      Alert.alert('エラー', 'Serverga ulanishda エラー');
     } finally {
       setLoading(false);
     }
@@ -52,7 +52,7 @@ const DeleteAccountScreen = ({ navigation }) => {
 
   const confirmAccountDeletion = async () => {
     if (!totpCode && !backupCode) {
-      Alert.alert('Xatolik', '2FA kod yoki backup kod kiriting');
+      Alert.alert('エラー', '2FA kod yoki backup kod kiriting');
       return;
     }
 
@@ -91,10 +91,10 @@ const DeleteAccountScreen = ({ navigation }) => {
           ]
         );
       } else {
-        Alert.alert('Xatolik', data.error);
+        Alert.alert('エラー', data.error);
       }
     } catch (error) {
-      Alert.alert('Xatolik', 'Serverga ulanishda xatolik');
+      Alert.alert('エラー', 'Serverga ulanishda エラー');
     } finally {
       setLoading(false);
     }
@@ -483,3 +483,4 @@ const styles = StyleSheet.create({
 });
 
 export default DeleteAccountScreen;
+

@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+﻿import { Platform } from 'react-native';
 
 // Kompyuteringizning local IP manzilini kiriting
 // Windows: ipconfig (Wi-Fi yoki Ethernet adapter)
@@ -28,3 +28,5 @@ export const API_ENDPOINTS = {
 };
 
 console.log('🌐 API Base URL:', API_BASE_URL);
+
+

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
@@ -506,3 +506,4 @@ const styles = StyleSheet.create({
 });
 
 export default HelpScreen;
+

@@ -1,4 +1,4 @@
-export const formatDate = (dateString) => {
+﻿export const formatDate = (dateString) => {
   const options = { year: 'numeric', month: 'long', day: 'numeric' };
   return new Date(dateString).toLocaleDateString(undefined, options);
 };
@@ -14,3 +14,4 @@ export const isEmailValid = (email) => {
   const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return regex.test(email);
 };
+

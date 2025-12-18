@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, ScrollView, Dimensions, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
 import { useAuth } from '../context/AuthContext';
 
-const API_URL = 'http://localhost:3001/api/profile';
+const API_URL = 'http://localhost:3002/api/profile';
 
 const ProfileScreen = ({ navigation }) => {
   const { user, login } = useAuth();
@@ -654,3 +654,4 @@ const styles = StyleSheet.create({
 });
 
 export default ProfileScreen;
+

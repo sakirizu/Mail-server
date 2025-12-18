@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { StyleSheet, Text, TextInput, Button, View } from 'react-native';
 
 const Compose = () => {
@@ -63,3 +63,4 @@ const styles = StyleSheet.create({
 });
 
 export default Compose;
+

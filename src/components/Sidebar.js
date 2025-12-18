@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Animated, Modal, ScrollView, Switch, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -153,7 +153,7 @@ const Sidebar = ({ onNavigate, collapsed = false, isVisible = false, isMobile = 
           return;
         }
 
-        const response = await fetch('http://localhost:3001/api/mails/stats', {
+        const response = await fetch('http://localhost:3002/api/mails/stats', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${user.token}`,
@@ -1047,3 +1047,4 @@ const styles = StyleSheet.create({
 });
 
 export default Sidebar;
+

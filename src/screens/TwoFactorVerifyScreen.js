@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, useWindowDimensions } from 'react-native';
 import { colors } from '../styles/theme';
 import { useAuth } from '../context/AuthContext';
@@ -29,7 +29,7 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
   const startWebAuthnAuth = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:3001/api/2fa/webauthn/auth/begin', {
+      const response = await fetch('http://localhost:3002/api/2fa/webauthn/auth/begin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tempToken })
@@ -37,7 +37,7 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
       
       const data = await response.json();
       if (data.error) {
-        Alert.alert('Xatolik', data.error);
+        Alert.alert('エラー', data.error);
         return;
       }
 
@@ -59,11 +59,11 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
         // Verify with server
         await verifyWebAuthn(credential, data.sessionToken);
       } else {
-        Alert.alert('Xatolik', 'WebAuthn brauzeringizda qo\'llab-quvvatlanmaydi');
+        Alert.alert('エラー', 'WebAuthn brauzeringizda qo\'llab-quvvatlanmaydi');
       }
     } catch (error) {
       console.error('WebAuthn auth error:', error);
-      Alert.alert('Xatolik', 'WebAuthn autentifikatsiyasida xatolik');
+      Alert.alert('エラー', 'WebAuthn autentifikatsiyasida エラー');
     } finally {
       setLoading(false);
     }
@@ -72,7 +72,7 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
   const verifyWebAuthn = async (credential, sessionToken) => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:3001/api/auth/verify-2fa', {
+      const response = await fetch('http://localhost:3002/api/auth/verify-2fa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -102,10 +102,10 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
           routes: [{ name: 'Main' }],
         });
       } else {
-        Alert.alert('Xatolik', data.error || 'WebAuthn tasdiqlashda xatolik');
+        Alert.alert('エラー', data.error || 'WebAuthn tasdiqlashda エラー');
       }
     } catch (error) {
-      Alert.alert('Xatolik', 'WebAuthn tasdiqlashda xatolik');
+      Alert.alert('エラー', 'WebAuthn tasdiqlashda エラー');
     } finally {
       setLoading(false);
     }
@@ -113,13 +113,13 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
 
   const verifyTOTP = async () => {
     if (!totpCode || totpCode.length !== 6) {
-      Alert.alert('Xatolik', '6 raqamli TOTP kodni kiriting');
+      Alert.alert('エラー', '6 raqamli TOTP kodni kiriting');
       return;
     }
 
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:3001/api/auth/verify-2fa', {
+      const response = await fetch('http://localhost:3002/api/auth/verify-2fa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -132,7 +132,7 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
       if (!response.ok) {
         const errorData = await response.json();
         console.log('2FA verification error:', errorData);
-        Alert.alert('Xatolik', errorData?.error || `Server xatoligi: ${response.status}`);
+        Alert.alert('エラー', errorData?.error || `サーバーエラー: ${response.status}`);
         setTotpCode('');
         return;
       }
@@ -147,12 +147,12 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
           routes: [{ name: 'Main' }],
         });
       } else {
-        Alert.alert('Xatolik', data.error || 'TOTP kod noto\'g\'ri');
+        Alert.alert('エラー', data.error || 'TOTP kod noto\'g\'ri');
         setTotpCode('');
       }
     } catch (error) {
       console.error('TOTP verification error:', error);
-      Alert.alert('Xatolik', 'Server bilan bog\'lanishda xatolik');
+      Alert.alert('エラー', 'Server bilan bog\'lanishda エラー');
     } finally {
       setLoading(false);
     }
@@ -160,13 +160,13 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
 
   const verifyBackupCode = async () => {
     if (!backupCode || backupCode.length !== 8) {
-      Alert.alert('Xatolik', '8 raqamli backup kodni kiriting');
+      Alert.alert('エラー', '8 raqamli backup kodni kiriting');
       return;
     }
 
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:3001/api/auth/verify-2fa', {
+      const response = await fetch('http://localhost:3002/api/auth/verify-2fa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -185,11 +185,11 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
           routes: [{ name: 'Main' }],
         });
       } else {
-        Alert.alert('Xatolik', data.error || 'Backup kod noto\'g\'ri yoki ishlatilgan');
+        Alert.alert('エラー', data.error || 'Backup kod noto\'g\'ri yoki ishlatilgan');
         setBackupCode('');
       }
     } catch (error) {
-      Alert.alert('Xatolik', 'Backup kod tasdiqlashda xatolik');
+      Alert.alert('エラー', 'Backup kod tasdiqlashda エラー');
     } finally {
       setLoading(false);
     }
@@ -509,3 +509,4 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
 });
+

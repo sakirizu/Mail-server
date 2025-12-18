@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useAuth } from '../context/AuthContext';
@@ -55,3 +55,4 @@ const AuthWrapper = ({ children }) => {
 };
 
 export default AuthWrapper;
+

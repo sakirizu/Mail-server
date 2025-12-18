@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -154,7 +154,7 @@ export default function ComposeModal({ visible, onClose, replyTo = null, draftDa
     }
 
     try {
-      const response = await fetch('http://localhost:3001/api/mails/draft', {
+      const response = await fetch('http://localhost:3002/api/mails/draft', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${user.token}`,
@@ -477,3 +477,4 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5, // Better spacing
   },
 });
+

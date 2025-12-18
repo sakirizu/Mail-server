@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert, TextInput, Modal, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
@@ -1029,3 +1029,5 @@ const styles = StyleSheet.create({
 });
 
 export default StatisticsScreen;
+
+

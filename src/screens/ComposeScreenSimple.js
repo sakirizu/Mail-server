@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Button, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { colors } from '../styles/theme';
 
@@ -122,3 +122,5 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
 });
+
+

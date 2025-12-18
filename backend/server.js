@@ -1,4 +1,4 @@
-require('dotenv').config();
+﻿require('dotenv').config();
 const express = require('express');
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
@@ -158,7 +158,7 @@ app.post('/api/auth/signup', async (req, res) => {
     });
   } catch (e) {
     console.error('Signup error:', e);
-    res.status(500).json({ error: 'Server xatoligi' });
+    res.status(500).json({ error: 'サーバーエラー' });
   }
 });
 
@@ -187,7 +187,7 @@ app.post('/api/auth/signup/confirm-2fa', async (req, res) => {
     }
   } catch (e) {
     console.error('2FA confirmation error:', e);
-    res.status(500).json({ error: 'Server xatoligi' });
+    res.status(500).json({ error: 'サーバーエラー' });
   }
 });
 
@@ -228,7 +228,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
   } catch (e) {
     console.error('Login error:', e);
-    res.status(500).json({ error: 'Server xatoligi' });
+    res.status(500).json({ error: 'サーバーエラー' });
   }
 });
 
@@ -1613,3 +1613,4 @@ app.post('/api/create-test-user', async (req, res) => {
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log('Server running on port', PORT));
+

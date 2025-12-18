@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
@@ -318,3 +318,4 @@ const styles = StyleSheet.create({
 });
 
 export default HelpSupportScreen;
+

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, Text, FlatList, StyleSheet, useWindowDimensions, RefreshControl, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -471,3 +471,4 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
 });
+

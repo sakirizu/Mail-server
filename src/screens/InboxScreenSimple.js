@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { colors } from '../styles/theme';
 
@@ -45,3 +45,5 @@ const styles = StyleSheet.create({
     opacity: 0.92,
   },
 });
+
+

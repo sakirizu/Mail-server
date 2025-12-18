@@ -1,5 +1,6 @@
 ﻿import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
+import { NavigationContainer } from '@react-navigation/native';
 import InboxScreen from '../screens/InboxScreen';
 import SentScreen from '../screens/SentScreen';
 import ComposeScreen from '../screens/ComposeScreen';
@@ -14,18 +15,20 @@ import HelpScreen from '../screens/HelpScreen';
 import SupportScreen from '../screens/SupportScreen';
 import UserGuideScreen from '../screens/UserGuideScreen';
 import DeleteAccountScreen from '../screens/DeleteAccountScreen';
+import DeviceManagementScreen from '../screens/DeviceManagementScreen';
 import { colors } from '../styles/theme';
 
 const Stack = createStackNavigator();
 
-const AppNavigator = () => {
+const AppNavigator = React.forwardRef((props, ref) => {
   return (
-    <Stack.Navigator 
-      initialRouteName="Inbox"
-      screenOptions={{
-        headerShown: false, // Hide headers since we have TopBar
-      }}
-    >
+    <NavigationContainer ref={ref}>
+      <Stack.Navigator 
+        initialRouteName="Inbox"
+        screenOptions={{
+          headerShown: false, // Hide headers since we have TopBar
+        }}
+      >
         <Stack.Screen 
           name="Inbox" 
           component={InboxScreen}
@@ -82,9 +85,15 @@ const AppNavigator = () => {
           name="DeleteAccount" 
           component={DeleteAccountScreen}
         />
+        <Stack.Screen 
+          name="DeviceManagement" 
+          component={DeviceManagementScreen}
+        />
       </Stack.Navigator>
+    </NavigationContainer>
   );
-};
+});
 
 export default AppNavigator;
+
 

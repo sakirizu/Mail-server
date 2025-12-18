@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, Platform } from 'react-native';
 import { colors } from '../styles/theme';
 import { useAuth } from '../context/AuthContext';
@@ -172,3 +172,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
+
+

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, Text, FlatList } from 'react-native';
 import MailItem from './MailItem';
 import { useAuth } from '../context/AuthContext';
@@ -19,3 +19,4 @@ const Inbox = ({ emails }) => {
 };
 
 export default Inbox;
+

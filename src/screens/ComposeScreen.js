@@ -1,4 +1,4 @@
-import React, { useState, Fragment, useEffect, useRef } from 'react';
+﻿import React, { useState, Fragment, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TextInput, Button, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
@@ -51,7 +51,7 @@ export default function ComposeScreen({ route }) {
     if (!user || !user.token) return;
 
     try {
-      await fetch('http://localhost:3001/api/mails/drafts/clear', {
+      await fetch('http://localhost:3002/api/mails/drafts/clear', {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${user.token}`,
@@ -68,7 +68,7 @@ export default function ComposeScreen({ route }) {
     if (!user || !user.token || (!to && !subject && !body)) return;
 
     try {
-      const response = await fetch('http://localhost:3001/api/mails/draft', {
+      const response = await fetch('http://localhost:3002/api/mails/draft', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${user.token}`,
@@ -100,7 +100,7 @@ export default function ComposeScreen({ route }) {
     try {
       console.log('📧 Sending email (Simple)...', { to, subject, body });
       
-      const response = await fetch('http://localhost:3001/api/mails/send', {
+      const response = await fetch('http://localhost:3002/api/mails/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -141,7 +141,7 @@ export default function ComposeScreen({ route }) {
     setShowConfirmModal(false);
     
     try {
-      const confirmResponse = await fetch('http://localhost:3001/api/mails/send', {
+      const confirmResponse = await fetch('http://localhost:3002/api/mails/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -323,3 +323,5 @@ export default function ComposeScreen({ route }) {
     marginBottom: 40,
   },
 });
+
+

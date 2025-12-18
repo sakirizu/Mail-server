@@ -1,6 +1,6 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 
-const API_URL = 'http://localhost:3001/api/mails'; // Fixed: mails instead of mail
+const API_URL = 'http://localhost:3002/api/mails'; // Fixed: mails instead of mail
 
 export const fetchInboxEmails = async (token) => {
   try {
@@ -59,3 +59,4 @@ export const fetchEmailDetails = async (emailId, token) => {
     throw error;
   }
 };
+

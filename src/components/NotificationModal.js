@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
 import { colors } from '../styles/theme';
 
@@ -120,3 +120,4 @@ const styles = StyleSheet.create({
 });
 
 export default NotificationModal;
+

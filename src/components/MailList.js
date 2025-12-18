@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { FlatList, View, StyleSheet, useWindowDimensions } from 'react-native';
 import MailItem from './MailItem';
 import { colors } from '../styles/theme';
@@ -71,3 +71,4 @@ const styles = StyleSheet.create({
 });
 
 export default MailList;
+

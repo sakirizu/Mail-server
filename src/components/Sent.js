@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { StyleSheet, Text, View, FlatList } from 'react-native';
 
 const Sent = ({ sentEmails }) => {
@@ -48,3 +48,4 @@ const styles = StyleSheet.create({
 });
 
 export default Sent;
+

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+﻿import React, { useState, useEffect, useContext } from 'react';
 import { 
   View, 
   Text, 
@@ -38,11 +38,11 @@ const DeviceManagementScreen = ({ navigation }) => {
       if (response.ok) {
         setDevices(data.devices);
       } else {
-        Alert.alert('Xatolik', data.error || 'Qurilmalarni yuklab bo\'lmadi');
+        Alert.alert('エラー', data.error || 'Qurilmalarni yuklab bo\'lmadi');
       }
     } catch (error) {
       console.error('Load devices error:', error);
-      Alert.alert('Xatolik', 'Serverga ulanishda xatolik');
+      Alert.alert('エラー', 'Serverga ulanishda エラー');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -85,11 +85,11 @@ const DeviceManagementScreen = ({ navigation }) => {
         setDevices(devices.filter(device => device.id !== deviceId));
         Alert.alert('Muvaffaqiyat', 'Qurilma muvaffaqiyatli o\'chirildi');
       } else {
-        Alert.alert('Xatolik', data.error || 'Qurilmani o\'chirib bo\'lmadi');
+        Alert.alert('エラー', data.error || 'Qurilmani o\'chirib bo\'lmadi');
       }
     } catch (error) {
       console.error('Remove device error:', error);
-      Alert.alert('Xatolik', 'Serverga ulanishda xatolik');
+      Alert.alert('エラー', 'Serverga ulanishda エラー');
     }
   };
 
@@ -342,3 +342,4 @@ const styles = StyleSheet.create({
 });
 
 export default DeviceManagementScreen;
+

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
 export default function InboxScreen() {
@@ -41,3 +41,5 @@ const styles = StyleSheet.create({
     color: '#333',
   },
 });
+
+

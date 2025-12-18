@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+﻿import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions, Alert, Modal } from 'react-native';
 import { colors } from '../styles/theme';
 import { AuthContext } from '../context/AuthContext';
@@ -19,7 +19,7 @@ const MailDetailScreen = ({ route, navigation }) => {
 
   const markAsRead = async (mailId) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/mails/${mailId}/read`, {
+      const response = await fetch(`http://localhost:3002/api/mails/${mailId}/read`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -507,3 +507,5 @@ const styles = StyleSheet.create({
 });
 
 export default MailDetailScreen;
+
+

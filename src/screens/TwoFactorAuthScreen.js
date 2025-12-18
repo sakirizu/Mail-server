@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, Alert, ScrollView } from 'react-native';
 import { colors } from '../styles/theme';
 import { useAuth } from '../context/AuthContext';
@@ -58,7 +58,7 @@ export default function TwoFactorAuthScreen() {
       setTotpSecret(data);
       setShowTOTPSetup(true);
     } catch (error) {
-      Alert.alert('Xatolik', 'TOTP secret yaratishda xatolik');
+      Alert.alert('エラー', 'TOTP secret yaratishda エラー');
     } finally {
       setLoading(false);
     }
@@ -66,7 +66,7 @@ export default function TwoFactorAuthScreen() {
 
   const enableTOTP = async () => {
     if (!totpCode) {
-      Alert.alert('Xatolik', 'TOTP kodni kiriting');
+      Alert.alert('エラー', 'TOTP kodni kiriting');
       return;
     }
 
@@ -90,10 +90,10 @@ export default function TwoFactorAuthScreen() {
         loadTwoFAStatus();
         Alert.alert('Muvaffaqiyat', 'TOTP yoqildi! Backup kodlarni saqlang.');
       } else {
-        Alert.alert('Xatolik', data.error);
+        Alert.alert('エラー', data.error);
       }
     } catch (error) {
-      Alert.alert('Xatolik', 'TOTP yoqishda xatolik');
+      Alert.alert('エラー', 'TOTP yoqishda エラー');
     } finally {
       setLoading(false);
     }
@@ -101,7 +101,7 @@ export default function TwoFactorAuthScreen() {
 
   const disableTOTP = async () => {
     if (!password) {
-      Alert.alert('Xatolik', 'Parolni kiriting');
+      Alert.alert('エラー', 'Parolni kiriting');
       return;
     }
 
@@ -132,10 +132,10 @@ export default function TwoFactorAuthScreen() {
                 loadTwoFAStatus();
                 Alert.alert('Muvaffaqiyat', 'TOTP o\'chirildi');
               } else {
-                Alert.alert('Xatolik', data.error);
+                Alert.alert('エラー', data.error);
               }
             } catch (error) {
-              Alert.alert('Xatolik', 'TOTP o\'chirishda xatolik');
+              Alert.alert('エラー', 'TOTP o\'chirishda エラー');
             } finally {
               setLoading(false);
             }
@@ -201,14 +201,14 @@ export default function TwoFactorAuthScreen() {
           loadWebAuthnKeys();
           Alert.alert('Muvaffaqiyat', 'Security key qo\'shildi');
         } else {
-          Alert.alert('Xatolik', result.error);
+          Alert.alert('エラー', result.error);
         }
       } else {
-        Alert.alert('Xatolik', 'WebAuthn brauzeringizda qo\'llab-quvvatlanmaydi');
+        Alert.alert('エラー', 'WebAuthn brauzeringizda qo\'llab-quvvatlanmaydi');
       }
     } catch (error) {
       console.error('WebAuthn registration error:', error);
-      Alert.alert('Xatolik', 'Security key qo\'shishda xatolik');
+      Alert.alert('エラー', 'Security key qo\'shishda エラー');
     } finally {
       setLoading(false);
     }
@@ -216,7 +216,7 @@ export default function TwoFactorAuthScreen() {
 
   const removeWebAuthnKey = async (keyId) => {
     if (!password) {
-      Alert.alert('Xatolik', 'Parolni kiriting');
+      Alert.alert('エラー', 'Parolni kiriting');
       return;
     }
 
@@ -248,10 +248,10 @@ export default function TwoFactorAuthScreen() {
                 loadWebAuthnKeys();
                 Alert.alert('Muvaffaqiyat', 'Security key o\'chirildi');
               } else {
-                Alert.alert('Xatolik', data.error);
+                Alert.alert('エラー', data.error);
               }
             } catch (error) {
-              Alert.alert('Xatolik', 'Security key o\'chirishda xatolik');
+              Alert.alert('エラー', 'Security key o\'chirishda エラー');
             } finally {
               setLoading(false);
             }
@@ -263,7 +263,7 @@ export default function TwoFactorAuthScreen() {
 
   const toggleRequire2FA = async (require2FA) => {
     if (!password) {
-      Alert.alert('Xatolik', 'Parolni kiriting');
+      Alert.alert('エラー', 'Parolni kiriting');
       return;
     }
 
@@ -285,10 +285,10 @@ export default function TwoFactorAuthScreen() {
         loadTwoFAStatus();
         Alert.alert('Muvaffaqiyat', require2FA ? '2FA majburiy qilindi' : '2FA majburiy emas');
       } else {
-        Alert.alert('Xatolik', data.error);
+        Alert.alert('エラー', data.error);
       }
     } catch (error) {
-      Alert.alert('Xatolik', '2FA sozlamalarini o\'zgartirishda xatolik');
+      Alert.alert('エラー', '2FA sozlamalarini o\'zgartirishda エラー');
     } finally {
       setLoading(false);
     }
@@ -824,3 +824,4 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border + '30',
   },
 });
+

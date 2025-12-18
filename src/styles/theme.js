@@ -1,4 +1,4 @@
-export const colors = {
+﻿export const colors = {
   // メインカラー - 日本風モダンパレット
   primary: '#3B82F6',        // ブライトブルー
   primaryLight: '#60A5FA',   // ライトブルー
@@ -88,3 +88,4 @@ export const theme = {
   spacing,
   borderRadius,
 };
+

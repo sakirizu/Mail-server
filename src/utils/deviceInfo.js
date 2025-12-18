@@ -1,4 +1,4 @@
-// Device and Browser Information Utility
+﻿// Device and Browser Information Utility
 export const getDeviceInfo = () => {
   const userAgent = navigator.userAgent;
   const platform = navigator.platform;
@@ -167,3 +167,4 @@ export default {
   getLocationInfo,
   isNewDevice
 };
+

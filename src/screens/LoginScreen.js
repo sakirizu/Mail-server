@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, useWindowDimensions, ScrollView, Modal, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,16 +15,16 @@ export default function LoginScreen({ navigation }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [stayLoggedIn, setStayLoggedIn] = useState(false);
-  
+
   // Notification state
   const [showNotification, setShowNotification] = useState(false);
   const [notificationData, setNotificationData] = useState({});
-  
+
   // 2FA Setup states
   const [showTwoFASetup, setShowTwoFASetup] = useState(false);
   const [twoFAData, setTwoFAData] = useState(null);
   const [totpCode, setTotpCode] = useState('');
-  
+
   const { login } = useAuth();
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
@@ -39,11 +39,11 @@ export default function LoginScreen({ navigation }) {
       setShowNotification(true);
       return;
     }
-    
+
     // Demo account - frontend only login
     if (username === 'demo' && password === 'demo123') {
       setLoading(true);
-      
+
       // Simulate loading delay
       setTimeout(() => {
         const demoUser = {
@@ -53,7 +53,7 @@ export default function LoginScreen({ navigation }) {
           email: 'demo@ssmail.com',
           token: 'demo-token-12345'
         };
-        
+
         login(demoUser);
         setNotificationData({
           type: 'success',
@@ -63,19 +63,19 @@ export default function LoginScreen({ navigation }) {
         setShowNotification(true);
         setLoading(false);
       }, 1000);
-      
+
       return;
     }
-    
+
     setLoading(true);
-    
+
     try {
       const res = await fetch(API_ENDPOINTS.LOGIN, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
       });
-      
+
       if (!res.ok) {
         const errorData = await res.json();
         setNotificationData({
@@ -87,9 +87,9 @@ export default function LoginScreen({ navigation }) {
         setLoading(false);
         return;
       }
-      
+
       const data = await res.json();
-      
+
       if (data.requires2FA) {
         navigation.navigate('TwoFactorVerify', {
           tempToken: data.tempToken,
@@ -97,7 +97,7 @@ export default function LoginScreen({ navigation }) {
         });
       } else if (data.token && data.user) {
         const userWithToken = { ...data.user, token: data.token };
-        
+
         // Stay logged in logic - save token instead of password
         if (stayLoggedIn) {
           await AsyncStorage.setItem('stayLoggedIn', 'true');
@@ -109,7 +109,7 @@ export default function LoginScreen({ navigation }) {
           await AsyncStorage.removeItem('savedUser');
           await AsyncStorage.removeItem('userCredentials'); // Remove old credentials
         }
-        
+
         login(userWithToken);
         setNotificationData({
           type: 'success',
@@ -139,23 +139,23 @@ export default function LoginScreen({ navigation }) {
 
   const handleSignup = async () => {
     if (!name || !username || !password) {
-      Alert.alert('Xatolik', 'Barcha maydonlarni to\'ldiring');
+      Alert.alert('エラー', 'すべての項目を入力してください');
       return;
     }
-    
+
     if (password !== confirmPassword) {
-      Alert.alert('Xatolik', 'Parollar mos kelmaydi');
+      Alert.alert('エラー', 'パスワードが一致しません');
       return;
     }
-    
+
     if (password.length < 6) {
-      Alert.alert('Xatolik', 'Parol kamida 6 ta belgidan iborat bo\'lishi kerak');
+      Alert.alert('エラー', 'パスワードは6文字以上にしてください');
       return;
     }
 
     const valid = /^[a-zA-Z0-9_]+$/.test(username);
     if (!valid) {
-      Alert.alert('Xatolik', 'Username faqat harflar, raqamlar va _ bo\'lishi mumkin');
+      Alert.alert('エラー', 'ユーザー名は英数字と_のみ使用できます');
       return;
     }
 
@@ -171,12 +171,12 @@ export default function LoginScreen({ navigation }) {
         // Show 2FA setup modal
         setTwoFAData(data);
         setShowTwoFASetup(true);
-        Alert.alert('Hisob yaratildi!', 'Endi 2FA ni sozlang. QR kodni Google Authenticator yoki Authy ilovasida skanerlang.');
+        Alert.alert('アカウント作成完了！', '2FA設定を行ってください。QRコードをGoogle AuthenticatorまたはAuthyでスキャンしてください。');
       } else {
-        Alert.alert('Xatolik', data?.error || 'Hisob yaratishda xatolik');
+        Alert.alert('エラー', data?.error || 'アカウント作成に失敗しました');
       }
     } catch (e) {
-      Alert.alert('Xatolik', 'Server xatoligi');
+      Alert.alert('エラー', 'サーバーエラーが発生しました');
     } finally {
       setLoading(false);
     }
@@ -184,7 +184,7 @@ export default function LoginScreen({ navigation }) {
 
   const confirmTwoFA = async () => {
     if (!totpCode || totpCode.length !== 6) {
-      Alert.alert('Xatolik', '6 raqamli TOTP kodni kiriting');
+      Alert.alert('エラー', '6桁の認証コードを入力してください');
       return;
     }
 
@@ -193,30 +193,30 @@ export default function LoginScreen({ navigation }) {
       const res = await fetch('http://localhost:4000/api/auth/signup/confirm-2fa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          userId: twoFAData.userId, 
-          totpCode: totpCode 
+        body: JSON.stringify({
+          userId: twoFAData.userId,
+          totpCode: totpCode
         })
       });
       const data = await res.json();
-      
+
       if (data.success && data.token && data.user) {
         // Login the user automatically
         const userWithToken = { ...data.user, token: data.token };
         login(userWithToken);
-        Alert.alert('Muvaffaqiyat!', '2FA sozlandi va hisobingizga kirdingiz!');
-        
+        Alert.alert('成功！', '2FAが設定され、ログインしました！');
+
         // Reset everything
         setShowTwoFASetup(false);
         setTwoFAData(null);
         setTotpCode('');
         resetForm();
       } else {
-        Alert.alert('Xatolik', data?.error || 'TOTP kod noto\'g\'ri');
+        Alert.alert('エラー', data?.error || '認証コードが正しくありません');
         setTotpCode('');
       }
     } catch (e) {
-      Alert.alert('Xatolik', 'Server xatoligi');
+      Alert.alert('エラー', 'サーバーエラーが発生しました');
     } finally {
       setLoading(false);
     }
@@ -257,7 +257,7 @@ export default function LoginScreen({ navigation }) {
               placeholderTextColor={colors.placeholder}
             />
           )}
-          
+
           <TextInput
             style={[styles.input, isMobile && styles.inputMobile]}
             placeholder="ユーザー名またはメールアドレス"
@@ -266,7 +266,7 @@ export default function LoginScreen({ navigation }) {
             autoCapitalize="none"
             placeholderTextColor={colors.placeholder}
           />
-          
+
           <TextInput
             style={[styles.input, isMobile && styles.inputMobile]}
             placeholder="パスワード"
@@ -275,10 +275,10 @@ export default function LoginScreen({ navigation }) {
             secureTextEntry
             placeholderTextColor={colors.placeholder}
           />
-          
+
           {!isSignup && (
             <View style={styles.checkboxContainer}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.checkbox}
                 onPress={() => setStayLoggedIn(!stayLoggedIn)}
               >
@@ -289,7 +289,7 @@ export default function LoginScreen({ navigation }) {
               </TouchableOpacity>
             </View>
           )}
-          
+
           {isSignup && (
             <TextInput
               style={[styles.input, isMobile && styles.inputMobile]}
@@ -303,8 +303,8 @@ export default function LoginScreen({ navigation }) {
         </View>
 
         {/* Main Action Button */}
-        <TouchableOpacity 
-          style={[styles.mainButton, isMobile && styles.mainButtonMobile, loading && styles.buttonDisabled]} 
+        <TouchableOpacity
+          style={[styles.mainButton, isMobile && styles.mainButtonMobile, loading && styles.buttonDisabled]}
           onPress={isSignup ? handleSignup : handleLogin}
           activeOpacity={0.8}
           disabled={loading}
@@ -319,7 +319,7 @@ export default function LoginScreen({ navigation }) {
           <Text style={[styles.toggleText, isMobile && styles.toggleTextMobile]}>
             {isSignup ? 'アカウントをお持ちですか？' : 'アカウントをお持ちでない方'}
           </Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={toggleMode}
             style={styles.toggleButton}
             activeOpacity={0.6}
@@ -337,16 +337,16 @@ export default function LoginScreen({ navigation }) {
         visible={showTwoFASetup}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => {}}
+        onRequestClose={() => { }}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>2FA Sozlash</Text>
-            
+
             <Text style={styles.modalDescription}>
               Hisobingiz xavfsizligi uchun 2FA majburiy. QR kodni Google Authenticator yoki Authy da skanerlang:
             </Text>
-            
+
             {/* Main Content Container */}
             <View style={styles.mainContentContainer}>
               {/* QR Code Section */}
@@ -354,8 +354,8 @@ export default function LoginScreen({ navigation }) {
                 <View style={styles.qrCodeSection}>
                   <Text style={styles.sectionTitle}>📱 QR Kod</Text>
                   <View style={styles.qrCodeContainer}>
-                    <Image 
-                      source={{ uri: twoFAData.twoFASetup.qrCode }} 
+                    <Image
+                      source={{ uri: twoFAData.twoFASetup.qrCode }}
                       style={styles.qrCodeImage}
                       resizeMode="contain"
                     />
@@ -365,7 +365,7 @@ export default function LoginScreen({ navigation }) {
                   </Text>
                 </View>
               )}
-              
+
               {/* Backup Codes Section */}
               {twoFAData?.twoFASetup?.backupCodes && (
                 <View style={styles.backupCodesSection}>
@@ -388,7 +388,7 @@ export default function LoginScreen({ navigation }) {
                 </View>
               )}
             </View>
-            
+
             {/* Manual Entry Section */}
             <View style={styles.manualEntrySection}>
               <Text style={styles.secretKeyLabel}>Yoki qo'lda kod kiriting:</Text>
@@ -396,7 +396,7 @@ export default function LoginScreen({ navigation }) {
                 {twoFAData?.twoFASetup?.secret}
               </Text>
             </View>
-            
+
             {/* TOTP Input Section */}
             <View style={styles.totpSection}>
               <Text style={styles.totpLabel}>
@@ -411,7 +411,7 @@ export default function LoginScreen({ navigation }) {
                 maxLength={6}
                 placeholderTextColor={colors.placeholder}
               />
-              
+
               <TouchableOpacity
                 style={[styles.confirmButton, loading && styles.buttonDisabled]}
                 onPress={confirmTwoFA}
@@ -422,7 +422,7 @@ export default function LoginScreen({ navigation }) {
                 </Text>
               </TouchableOpacity>
             </View>
-            
+
             {twoFAData?.twoFASetup?.backupCodes && (
               <View style={styles.backupCodesContainer}>
                 <Text style={styles.backupCodesTitle}>
@@ -443,7 +443,7 @@ export default function LoginScreen({ navigation }) {
           </View>
         </View>
       </Modal>
-      
+
       {/* Notification Modal */}
       <NotificationModal
         visible={showNotification}
@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 12,
   },
-  
+
   // Header Styles
   headerContainer: {
     alignItems: 'center',
@@ -635,13 +635,13 @@ const styles = StyleSheet.create({
     height: 180,
     borderRadius: 10,
   },
-  
+
   // Main container for QR and backup codes
   mainContentContainer: {
     width: '100%',
     paddingVertical: 10,
   },
-  
+
   // QR Code Section
   qrCodeSection: {
     backgroundColor: colors.white,
@@ -656,7 +656,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
-  
+
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -664,14 +664,14 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: 'center',
   },
-  
+
   qrCodeContainer: {
     alignItems: 'center',
     backgroundColor: colors.white,
     borderRadius: 10,
     padding: 10,
   },
-  
+
   qrInstruction: {
     fontSize: 12,
     color: colors.text,
@@ -679,7 +679,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontStyle: 'italic',
   },
-  
+
   // Backup Codes Section
   backupCodesSection: {
     backgroundColor: '#fff3cd',
@@ -689,7 +689,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ffc107',
   },
-  
+
   backupCodesWarning: {
     fontSize: 12,
     color: '#856404',
@@ -697,7 +697,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontWeight: '600',
   },
-  
+
   backupCodesContainer: {
     backgroundColor: colors.white,
     borderRadius: 8,
@@ -705,13 +705,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ffc107',
   },
-  
+
   backupCodesList: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
-  
+
   backupCodeItem: {
     width: '48%',
     backgroundColor: colors.background,
@@ -721,7 +721,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.primary + '30',
   },
-  
+
   backupCode: {
     fontSize: 14,
     fontFamily: 'monospace',
@@ -729,7 +729,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: '600',
   },
-  
+
   // Manual Entry Section
   manualEntrySection: {
     backgroundColor: colors.background,
@@ -737,7 +737,7 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 15,
   },
-  
+
   // TOTP Section
   totpSection: {
     alignItems: 'center',
@@ -868,3 +868,5 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
 });
+
+
