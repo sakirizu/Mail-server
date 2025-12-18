@@ -1,211 +1,202 @@
-# 🛡️ Phishing Detection System - Complete Setup Guide
+# 🛡️ フィッシング検知システム - 完全セットアップガイド
 
-## 📋 Overview
+## 📋 概要
 
-Your SSMail application now has **AI-powered phishing detection** that automatically checks every incoming email and delivers it to either:
-- ✅ **INBOX** - Safe emails
-- ⚠️ **SPAM** - Phishing/suspicious emails
+SSMail アプリケーションには **AI 搭載のフィッシング検知機能** が備わっており、すべての受信メールを自動的にチェックして以下のいずれかに振り分けます：
+- ✅ **受信トレイ (INBOX)** - 安全なメール
+- ⚠️ **迷惑メール (SPAM)** - フィッシングの疑いがあるメール
 
-## 🎯 How It Works
+## 🎯 動作の仕組み
 
 ```
-Mail Flow:
+メールの流れ:
 ┌─────────────────────────────────────────────────────────────┐
-│ 1. User sends email                                         │
+│ 1. ユーザーがメールを送信                                   │
 │    ↓                                                         │
-│ 2. Email saved to database (Sent folder for sender)        │
+│ 2. データベースに保存（送信者の「送信済み」フォルダへ）      │
 │    ↓                                                         │
-│ 3. 🤖 AI Phishing Check (Python Service)                   │
-│    • Checks URLs against PhishTank (120,000+ phishing URLs) │
-│    • Analyzes suspicious keywords                           │
-│    • Checks sender patterns                                 │
-│    • Calculates confidence score (0-100%)                   │
+│ 3. 🤖 AI フィッシングチェック（Python サービス）            │
+│    • PhishTank（12万件以上のフィッシングURL）との照合        │
+│    • 疑わしいキーワードの分析                               │
+│    • 送信者パターンの確認                                   │
+│    • 信頼度スコア（0-100%）の算出                            │
 │    ↓                                                         │
-│ 4. Decision:                                                │
-│    ├─ Phishing detected → 📥 SPAM folder                   │
-│    └─ Email safe → 📬 INBOX folder                         │
+│ 4. 判定:                                                    │
+│    ├─ フィッシング検知 → 📥 迷惑メール（SPAM）フォルダへ     │
+│    └─ 安全なメール → 📬 受信トレイ（INBOX）フォルダへ       │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## 🚀 Quick Start
+## 🚀 クイックスタート
 
-### Method 1: Automatic (Recommended)
+### 方法 1: 自動（推奨）
 
 ```bash
 cd backend
 start-all-services.bat
 ```
 
-This will automatically:
-1. ✅ Install Python dependencies
-2. ✅ Install Node.js dependencies  
-3. ✅ Start Phishing Detection Service (port 5000)
-4. ✅ Start Mail Server (port 3001)
+これにより以下が自動的に実行されます：
+1. ✅ Python の依存関係のインストール
+2. ✅ Node.js の依存関係のインストール
+3. ✅ フィッシング検知サービス（ポート 5000）の起動
+4. ✅ メールサーバー（ポート 3001）の起動
 
-### Method 2: Manual
+### 方法 2: 手動
 
-**Terminal 1 - Start Python Phishing Detector:**
+**ターミナル 1 - Python フィッシングデテクターの起動:**
 ```bash
 cd backend/phishing-detector
 pip install -r requirements.txt
 python phishing_detector.py
 ```
 
-**Terminal 2 - Start Mail Server:**
+**ターミナル 2 - メールサーバーの起動:**
 ```bash
 cd backend
 npm install
 node server.js
 ```
 
-## 📦 Installation Requirements
+## 📦 インストール要件
 
-- ✅ **Python 3.8+** - [Download](https://www.python.org/downloads/)
-- ✅ **Node.js 14+** - [Download](https://nodejs.org/)
-- ✅ **MongoDB** - Running on localhost:27017
-- ✅ **MySQL** - Running on localhost:3306
+- ✅ **Python 3.8+** - [ダウンロード](https://www.python.org/downloads/)
+- ✅ **Node.js 14+** - [ダウンロード](https://nodejs.org/)
+- ✅ **MongoDB** - localhost:27017 で実行中
+- ✅ **MySQL** - localhost:3306 で実行中
 
-## 🧪 Testing
+## 🧪 テスト方法
 
-### Test the Phishing Detector:
+### フィッシングデテクターのテスト:
 
 ```bash
 cd backend
 node test-phishing-detection.js
 ```
 
-Expected output:
+期待される出力:
 ```
-🧪 Testing Phishing Detection Service...
+🧪 フィッシング検知サービスのテスト中...
 
-Test 1: Health Check
-✅ Health check passed
-   PhishTank URLs loaded: 120000
-   Last update: 2025-11-20T10:30:00
+テスト 1: ヘルスチェック
+✅ ヘルスチェック合格
+   ロードされたURL数: 120000
+   最終更新: 2025-11-20T10:30:00
 
-Test 2: Check Safe Email
-   Is Phishing: false (expected: false)
-   Confidence: 0%
-   Recommendation: inbox
+テスト 2: 安全なメールのチェック
+   Is Phishing: false (期待値: false)
+   信頼度: 0%
+   推奨フォルダ: inbox
 
-Test 3: Check Suspicious Email
+テスト 3: 疑わしいメールのチェック
    Is Phishing: true
-   Confidence: 85%
-   Recommendation: spam
+   信頼度: 85%
+   推奨フォルダ: spam
 
-✅ All tests completed!
+✅ すべてのテストが完了しました！
 ```
 
-### Test in the App:
+### アプリ内でのテスト:
 
-1. **Send a safe email:**
-   - Subject: "Hello"
-   - Body: "Just saying hi!"
-   - ✅ Should appear in recipient's INBOX
+1. **安全なメールを送信:**
+   - 件名: "こんにちは"
+   - 本文: "元気ですか？"
+   - ✅ 受信者の受信用トレイ（INBOX）に表示されるはずです
 
-2. **Send a phishing email:**
-   - Subject: "URGENT: Verify your account"
-   - Body: "Click here: http://suspicious-site.com"
-   - ⚠️ Should appear in recipient's SPAM folder
+2. **フィッシングメールを送信:**
+   - 件名: "【緊急】アカウントの確認が必要です"
+   - 本文: "こちらをクリックしてください: http://suspicious-site.com"
+   - ⚠️ 受信者の迷惑メール（SPAM）フォルダに入るはずです
 
-## 🔧 Configuration
+## 🔧 設定
 
-### Enable/Disable Phishing Detection
+### フィッシング検知の有効化/無効化
 
-Create `.env` file in `backend/` folder:
+`backend/` フォルダに `.env` ファイルを作成します：
 
 ```env
-# Enable phishing detection (default: true)
+# フィッシング検知を有効にするか (デフォルト: true)
 ENABLE_PHISHING_DETECTION=true
 
-# Python service URL
+# Python サービスの URL
 PHISHING_DETECTOR_URL=http://localhost:5000
 ```
 
-To **disable** temporarily:
+一時的に **無効** にする場合：
 ```env
 ENABLE_PHISHING_DETECTION=false
 ```
 
-## 📊 Phishing Detection Criteria
+## 📊 フィッシング検知基準
 
-### 🚨 High Risk (Score ≥ 10)
-- Known phishing URL from PhishTank database
-- → **Automatically marked as SPAM**
+### 🚨 高リスク (スコア ≥ 10)
+- PhishTank データベースにある既知のフィッシング URL
+- → **自動的に迷惑メールとしてマーク**
 
-### ⚠️ Suspicious (Score 5-9)
-- Multiple suspicious keywords (urgent, verify, password)
-- IP address in URL instead of domain
-- Suspicious sender domain
-- → **Marked as SPAM**
+### ⚠️ 疑わしい (スコア 5-9)
+- 複数の疑わしいキーワード（緊急、確認、パスワード等）
+- ドメインの代わりにIPアドレスがURLに含まれている
+- 送信者のドメインが疑わしい
+- → **迷惑メールとしてマーク**
 
-### ✅ Safe (Score < 5)
-- No known phishing URLs
-- Normal keywords
-- Regular sender
-- → **Delivered to INBOX**
+### ✅ 安全 (スコア < 5)
+- 既知のフィッシング URL なし
+- 通常のキーワード
+- 通常の送信者
+- → **受信トレイに配信**
 
-## 🎨 User Interface Updates
+## 🎨 ユーザーインターフェースの更新
 
-### Sidebar Counts
-- **下書き (Drafts):** Shows real draft count from database
-- **迷惑メール (Spam):** Shows real spam count from database
+### サイドバーのカウント
+- **下書き (Drafts):** データベースにある実際の下書き数を表示
+- **迷惑メール (Spam):** データベースにある実際の迷惑メール数を表示
 
-### Spam Screen
-- ✅ Fetches real spam emails from database
-- ✅ No more fake data
-- ✅ Pull-to-refresh support
-- ✅ Empty state when no spam
+### 迷惑メール画面
+- ✅ データベースから実際の迷惑メールを取得
+- ✅ ダミーデータではなく実データを表示
+- ✅ 引っ張って更新（Pull-to-refresh）に対応
+- ✅ 迷惑メールがない時の空の状態を実装
 
-## 📁 Files Created
+## 📁 作成されたファイル
 
 ```
 backend/
 ├── phishing-detector/
-│   ├── phishing_detector.py       # Main AI service
-│   ├── requirements.txt            # Python dependencies
-│   ├── start.bat                   # Python service starter
-│   ├── README.md                   # Service documentation
-│   └── phishtank_cache.json       # PhishTank data cache (auto-generated)
-├── start-all-services.bat         # Start both services
-├── test-phishing-detection.js     # Test suite
-├── PHISHING_DETECTION_README.md   # Technical documentation
-└── server.js                       # Updated with phishing check
+│   ├── phishing_detector.py       # メイン AI サービス
+│   ├── requirements.txt            # Python 依存関係
+│   ├── start.bat                   # サービス起動バッチ
+│   ├── README.md                   # サービス用ドキュメント
+│   └── phishtank_cache.json       # キャッシュデータ（自動生成）
+├── start-all-services.bat         # 両サービスの一括起動
+├── test-phishing-detection.js     # テストスイート
+├── PHISHING_DETECTION_README.md   # 技術ドキュメント
+└── server.js                       # フィッシングチェック統合済み
 ```
 
-## 🔍 Monitoring & Logs
+## 🔍 モニタリングとログ
 
-### Mail Server Logs (server.js):
+### メールサーバーログ (server.js):
 
-**Safe Email:**
+**安全なメール:**
 ```
-🔍 Checking email for phishing...
-✅ Email appears safe → Delivering to INBOX
-📧 Created inbox copy for recipient: user@ssm.com
-```
-
-**Phishing Email:**
-```
-🔍 Checking email for phishing...
-⚠️  PHISHING DETECTED (confidence: 95%)
-   Reasons: Known phishing URL found, Suspicious keyword in subject: urgent
-   → Delivering to SPAM folder
-📧 Created spam copy for recipient: user@ssm.com
+🔍 フィッシングチェックを実行中...
+✅ 安全なメールです → 受信トレイへ配信
+📧 受信者用コピーを作成しました: user@ssm.com
 ```
 
-### Phishing Detector Logs (Python):
-
+**フィッシングメール:**
 ```
-🚀 Starting Phishing Detection Service...
-✅ Loaded 120000 phishing URLs from cache
- * Running on http://0.0.0.0:5000
+🔍 フィッシングチェックを実行中...
+⚠️  フィッシングを検知しました (信頼度: 95%)
+   理由: 既知のフィッシングURLを発見, 件名に疑わしいキーワード: 緊急
+   → 迷惑メールフォルダへ配信
+📧 迷惑メール用コピーを作成しました: user@ssm.com
 ```
 
-## 🛠️ Troubleshooting
+## 🛠️ トラブルシューティング
 
-### Problem: Python service won't start
-
-**Solution:**
+### 問題: Python サービスが起動しない
+**解決策:**
 ```bash
 cd backend/phishing-detector
 pip install --upgrade pip
@@ -213,96 +204,23 @@ pip install -r requirements.txt
 python phishing_detector.py
 ```
 
-### Problem: PhishTank data not loading
-
-**Solution:**
+### 問題: フィッシングデータがロードされない
+**解決策:**
 ```bash
-# Delete cache and re-download
+# キャッシュを削除して再ダウンロード
 cd backend/phishing-detector
 del phishtank_cache.json
 python phishing_detector.py
 ```
 
-Or use the API:
-```bash
-curl -X POST http://localhost:5000/refresh-data
-```
+## 🎉 セットアップ成功！
 
-### Problem: Emails not being filtered
+あなたのメールアプリケーションにエンタープライズグレードのフィッシング保護が備わりました！
 
-**Checklist:**
-1. ✅ Python service running on port 5000?
-   ```bash
-   curl http://localhost:5000/health
-   ```
+- ✅ 自動フィッシング検知
+- ✅ リアルタイムのメールフィルタリング
+- ✅ 12万件以上の既知の有害URLをブロック
+- ✅ スマートなキーワード分析
+- ✅ 透明性の高い信頼度スコアリング
 
-2. ✅ `ENABLE_PHISHING_DETECTION=true` in .env?
-
-3. ✅ Check server.js logs for "Checking email for phishing..."
-
-4. ✅ Node-fetch installed?
-   ```bash
-   cd backend
-   npm install
-   ```
-
-### Problem: Service crashes or errors
-
-**Check logs:**
-- Python service terminal for errors
-- Node.js terminal for integration errors
-- MongoDB connection status
-- MySQL connection status
-
-## 📈 Performance
-
-- **PhishTank Database:** 120,000+ known phishing URLs
-- **Cache Duration:** 24 hours (auto-refresh)
-- **Check Speed:** < 100ms per email
-- **Memory Usage:** ~20MB (cache) + ~50MB (Python service)
-
-## 🔒 Security Features
-
-- ✅ No external API calls during email checking (uses local cache)
-- ✅ PhishTank data updates automatically every 24 hours
-- ✅ Failed checks default to "safe" (inbox) for reliability
-- ✅ All checks logged for auditing
-- ✅ Confidence scoring for transparency
-
-## 📞 Support
-
-### Quick Commands
-
-**Check Python service health:**
-```bash
-curl http://localhost:5000/health
-```
-
-**Refresh PhishTank data:**
-```bash
-curl -X POST http://localhost:5000/refresh-data
-```
-
-**Test email check:**
-```bash
-curl -X POST http://localhost:5000/check-email -H "Content-Type: application/json" -d "{\"from\":\"test@test.com\",\"subject\":\"Test\",\"body\":\"Hello\"}"
-```
-
-**View mail server logs:**
-```bash
-cd backend
-node server.js
-# Watch for: "🔍 Checking email for phishing..."
-```
-
-## 🎉 Success!
-
-Your mail application now has enterprise-grade phishing protection! 
-
-- ✅ Automatic phishing detection
-- ✅ Real-time email filtering
-- ✅ 120,000+ known phishing URLs blocked
-- ✅ Smart keyword analysis
-- ✅ Transparent confidence scoring
-
-Happy secure emailing! 🛡️📧
+安全なメールライフを！ 🛡️📧
