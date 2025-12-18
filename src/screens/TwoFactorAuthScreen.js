@@ -23,7 +23,7 @@ export default function TwoFactorAuthScreen() {
   const loadTwoFAStatus = async () => {
     try {
       const token = user.token;
-      const response = await fetch('http://10.2.145.211:4000/api/2fa/status', {
+      const response = await fetch('http://localhost:3002/api/2fa/status', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -36,7 +36,7 @@ export default function TwoFactorAuthScreen() {
   const loadWebAuthnKeys = async () => {
     try {
       const token = user.token;
-      const response = await fetch('http://10.2.145.211:4000/api/2fa/webauthn/keys', {
+      const response = await fetch('http://localhost:3002/api/2fa/webauthn/keys', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -50,7 +50,7 @@ export default function TwoFactorAuthScreen() {
     try {
       setLoading(true);
       const token = user.token;
-      const response = await fetch('http://10.2.145.211:4000/api/2fa/totp/generate', {
+      const response = await fetch('http://localhost:3002/api/2fa/totp/generate', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -58,7 +58,7 @@ export default function TwoFactorAuthScreen() {
       setTotpSecret(data);
       setShowTOTPSetup(true);
     } catch (error) {
-      Alert.alert('エラー', 'TOTP secret yaratishda エラー');
+      Alert.alert('エラー', 'TOTPシークレットの生成に失敗しました');
     } finally {
       setLoading(false);
     }
@@ -66,34 +66,34 @@ export default function TwoFactorAuthScreen() {
 
   const enableTOTP = async () => {
     if (!totpCode) {
-      Alert.alert('エラー', 'TOTP kodni kiriting');
+      Alert.alert('エラー', '認証コードを入力してください');
       return;
     }
 
     try {
       setLoading(true);
       const token = user.token;
-      const response = await fetch('http://10.2.145.211:4000/api/2fa/totp/enable', {
+      const response = await fetch('http://localhost:3002/api/2fa/totp/enable', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ token: totpCode })
       });
       const data = await response.json();
-      
+
       if (data.success) {
         setBackupCodes(data.backupCodes);
         setShowTOTPSetup(false);
         setTotpCode('');
         loadTwoFAStatus();
-        Alert.alert('Muvaffaqiyat', 'TOTP yoqildi! Backup kodlarni saqlang.');
+        Alert.alert('成功', 'TOTPが有効になりました！バックアップコードを保存してください。');
       } else {
         Alert.alert('エラー', data.error);
       }
     } catch (error) {
-      Alert.alert('エラー', 'TOTP yoqishda エラー');
+      Alert.alert('エラー', 'TOTPの有効化に失敗しました');
     } finally {
       setLoading(false);
     }
@@ -101,41 +101,41 @@ export default function TwoFactorAuthScreen() {
 
   const disableTOTP = async () => {
     if (!password) {
-      Alert.alert('エラー', 'Parolni kiriting');
+      Alert.alert('エラー', 'パスワードを入力してください');
       return;
     }
 
     Alert.alert(
-      'Tasdiqlash',
-      'TOTP ni o\'chirmoqchimisiz?',
+      '確認',
+      'TOTPを無効にしてもよろしいですか？',
       [
-        { text: 'Bekor qilish', style: 'cancel' },
-        { 
-          text: 'O\'chirish', 
+        { text: 'キャンセル', style: 'cancel' },
+        {
+          text: '無効にする',
           style: 'destructive',
           onPress: async () => {
             try {
               setLoading(true);
               const token = user.token;
-              const response = await fetch('http://10.2.145.211:4000/api/2fa/totp/disable', {
+              const response = await fetch('http://localhost:3002/api/2fa/totp/disable', {
                 method: 'POST',
-                headers: { 
+                headers: {
                   'Authorization': `Bearer ${token}`,
                   'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ password })
               });
               const data = await response.json();
-              
+
               if (data.success) {
                 setPassword('');
                 loadTwoFAStatus();
-                Alert.alert('Muvaffaqiyat', 'TOTP o\'chirildi');
+                Alert.alert('成功', 'TOTPが無効になりました');
               } else {
                 Alert.alert('エラー', data.error);
               }
             } catch (error) {
-              Alert.alert('エラー', 'TOTP o\'chirishda エラー');
+              Alert.alert('エラー', 'TOTPの無効化に失敗しました');
             } finally {
               setLoading(false);
             }
@@ -149,9 +149,9 @@ export default function TwoFactorAuthScreen() {
     try {
       setLoading(true);
       const token = user.token;
-      
+
       // Get registration options from server
-      const response = await fetch('http://10.2.145.211:4000/api/2fa/webauthn/register/begin', {
+      const response = await fetch('http://localhost:3002/api/2fa/webauthn/register/begin', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -175,9 +175,9 @@ export default function TwoFactorAuthScreen() {
         });
 
         // Send registration response to server
-        const verifyResponse = await fetch('http://10.2.145.211:4000/api/2fa/webauthn/register/complete', {
+        const verifyResponse = await fetch('http://localhost:3002/api/2fa/webauthn/register/complete', {
           method: 'POST',
-          headers: { 
+          headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
@@ -199,7 +199,7 @@ export default function TwoFactorAuthScreen() {
         if (result.success) {
           loadTwoFAStatus();
           loadWebAuthnKeys();
-          Alert.alert('Muvaffaqiyat', 'Security key qo\'shildi');
+          Alert.alert('成功', 'セキュリティキーが登録されました');
         } else {
           Alert.alert('エラー', result.error);
         }
@@ -208,7 +208,7 @@ export default function TwoFactorAuthScreen() {
       }
     } catch (error) {
       console.error('WebAuthn registration error:', error);
-      Alert.alert('エラー', 'Security key qo\'shishda エラー');
+      Alert.alert('エラー', 'セキュリティキーの登録に失敗しました');
     } finally {
       setLoading(false);
     }
@@ -221,37 +221,37 @@ export default function TwoFactorAuthScreen() {
     }
 
     Alert.alert(
-      'Tasdiqlash',
-      'Security key ni o\'chirmoqchimisiz?',
+      '確認',
+      'セキュリティキーを削除しますか？',
       [
-        { text: 'Bekor qilish', style: 'cancel' },
-        { 
-          text: 'O\'chirish', 
+        { text: 'キャンセル', style: 'cancel' },
+        {
+          text: '削除',
           style: 'destructive',
           onPress: async () => {
             try {
               setLoading(true);
               const token = user.token;
-              const response = await fetch(`http://10.2.145.211:4000/api/2fa/webauthn/keys/${keyId}`, {
+              const response = await fetch(`http://localhost:3002/api/2fa/webauthn/keys/${keyId}`, {
                 method: 'DELETE',
-                headers: { 
+                headers: {
                   'Authorization': `Bearer ${token}`,
                   'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ password })
               });
               const data = await response.json();
-              
+
               if (data.success) {
                 setPassword('');
                 loadTwoFAStatus();
                 loadWebAuthnKeys();
-                Alert.alert('Muvaffaqiyat', 'Security key o\'chirildi');
+                Alert.alert('成功', 'セキュリティキーを削除しました');
               } else {
                 Alert.alert('エラー', data.error);
               }
             } catch (error) {
-              Alert.alert('エラー', 'Security key o\'chirishda エラー');
+              Alert.alert('エラー', 'セキュリティキーの削除に失敗しました');
             } finally {
               setLoading(false);
             }
@@ -270,25 +270,25 @@ export default function TwoFactorAuthScreen() {
     try {
       setLoading(true);
       const token = user.token;
-      const response = await fetch('http://10.2.145.211:4000/api/2fa/require', {
+      const response = await fetch('http://localhost:3002/api/2fa/require', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ require2FA, password })
       });
       const data = await response.json();
-      
+
       if (data.success) {
         setPassword('');
         loadTwoFAStatus();
-        Alert.alert('Muvaffaqiyat', require2FA ? '2FA majburiy qilindi' : '2FA majburiy emas');
+        Alert.alert('成功', require2FA ? '2FAが必須になりました' : '2FAが任意になりました');
       } else {
         Alert.alert('エラー', data.error);
       }
     } catch (error) {
-      Alert.alert('エラー', '2FA sozlamalarini o\'zgartirishda エラー');
+      Alert.alert('エラー', '2FA設定の変更に失敗しました');
     } finally {
       setLoading(false);
     }
@@ -297,7 +297,7 @@ export default function TwoFactorAuthScreen() {
   if (!twoFAStatus) {
     return (
       <View style={styles.container}>
-        <Text style={styles.loading}>Yuklanmoqda...</Text>
+        <Text style={styles.loading}>読み込み中...</Text>
       </View>
     );
   }
@@ -305,8 +305,8 @@ export default function TwoFactorAuthScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Ikki Bosqichli Autentifikatsiya (2FA)</Text>
-        <Text style={styles.subtitle}>Hisobingizni qo'shimcha himoya qilish uchun 2FA ni yoqing</Text>
+        <Text style={styles.title}>二段階認証 (2FA)</Text>
+        <Text style={styles.subtitle}>アカウントのセキュリティを強化するために2FAを設定してください</Text>
       </View>
 
       {/* TOTP Section */}
@@ -316,40 +316,40 @@ export default function TwoFactorAuthScreen() {
           <Text style={styles.sectionTitle}>Google Authenticator / Authy (TOTP)</Text>
         </View>
         <Text style={styles.sectionDescription}>
-          Mobil ilovals orqali vaqtga asoslangan kod yaratish
+          認証アプリによる時間ベースのコード生成 (Google Authenticator等)
         </Text>
-        
+
         {twoFAStatus.totpEnabled ? (
           <View style={styles.enabledSection}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
               <Ionicons name="checkmark-circle" size={20} color="#34C759" style={{ marginRight: 8 }} />
-              <Text style={styles.enabledText}>TOTP yoqilgan</Text>
+              <Text style={styles.enabledText}>TOTP 有効</Text>
             </View>
             <View style={styles.actionSection}>
               <TextInput
                 style={styles.passwordInput}
-                placeholder="Parol"
+                placeholder="パスワード"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
                 placeholderTextColor={colors.placeholder}
               />
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.dangerButton, loading && styles.buttonDisabled]}
                 onPress={disableTOTP}
                 disabled={loading}
               >
-                <Text style={styles.dangerButtonText}>TOTP ni o'chirish</Text>
+                <Text style={styles.dangerButtonText}>TOTP を無効にする</Text>
               </TouchableOpacity>
             </View>
           </View>
         ) : (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.primaryButton, loading && styles.buttonDisabled]}
             onPress={generateTOTPSecret}
             disabled={loading}
           >
-            <Text style={styles.primaryButtonText}>TOTP ni sozlash</Text>
+            <Text style={styles.primaryButtonText}>TOTP を設定する</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -358,46 +358,46 @@ export default function TwoFactorAuthScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>🔑 Hardware Security Key (FIDO2/WebAuthn)</Text>
         <Text style={styles.sectionDescription}>
-          YubiKey yoki boshqa apparat kalitlar orqali himoya
+          YubiKey 等のハードウェアセキュリティキーによる保護
         </Text>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={[styles.primaryButton, loading && styles.buttonDisabled]}
           onPress={startWebAuthnRegistration}
           disabled={loading}
         >
-          <Text style={styles.primaryButtonText}>Security Key qo'shish</Text>
+          <Text style={styles.primaryButtonText}>Security Key を追加</Text>
         </TouchableOpacity>
 
         {webauthnKeys.length > 0 && (
           <View style={styles.keysContainer}>
-            <Text style={styles.keysTitle}>Ro'yxatdan o'tgan kalitlar:</Text>
+            <Text style={styles.keysTitle}>登録済みのキー:</Text>
             {webauthnKeys.map((key) => (
               <View key={key.id} style={styles.keyItem}>
                 <View style={styles.keyInfo}>
                   <Text style={styles.keyName}>{key.name}</Text>
                   <Text style={styles.keyDate}>
-                    Qo'shilgan: {new Date(key.created_at).toLocaleDateString()}
+                    登録日: {new Date(key.created_at).toLocaleDateString()}
                   </Text>
                   {key.last_used && (
                     <Text style={styles.keyDate}>
-                      Oxirgi foydalanish: {new Date(key.last_used).toLocaleDateString()}
+                      最終使用日: {new Date(key.last_used).toLocaleDateString()}
                     </Text>
                   )}
                 </View>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.removeKeyButton}
                   onPress={() => removeWebAuthnKey(key.id)}
                 >
-                  <Text style={styles.removeKeyText}>O'chirish</Text>
+                  <Text style={styles.removeKeyText}>削除</Text>
                 </TouchableOpacity>
               </View>
             ))}
-            
+
             <View style={styles.actionSection}>
               <TextInput
                 style={styles.passwordInput}
-                placeholder="Parol"
+                placeholder="パスワード"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
@@ -413,39 +413,39 @@ export default function TwoFactorAuthScreen() {
         <View style={styles.section}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
             <Ionicons name="settings" size={22} color={colors.primary} style={{ marginRight: 8 }} />
-            <Text style={styles.sectionTitle}>2FA Sozlamalari</Text>
+            <Text style={styles.sectionTitle}>2FA 設定</Text>
           </View>
-          
+
           <View style={styles.requireSection}>
             <Text style={styles.requireText}>
-              2FA ni majburiy qilish (kirish paytida doimo talab qilinadi)
+              2FA の強制（ログイン時に常に要求されます）
             </Text>
             <View style={styles.actionSection}>
               <TextInput
                 style={styles.passwordInput}
-                placeholder="Parol"
+                placeholder="パスワード"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
                 placeholderTextColor={colors.placeholder}
               />
               <View style={styles.toggleButtons}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[styles.toggleButton, twoFAStatus.require2FA && styles.toggleButtonActive]}
                   onPress={() => toggleRequire2FA(true)}
                   disabled={loading}
                 >
                   <Text style={[styles.toggleButtonText, twoFAStatus.require2FA && styles.toggleButtonTextActive]}>
-                    Majburiy
+                    必須
                   </Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[styles.toggleButton, !twoFAStatus.require2FA && styles.toggleButtonActive]}
                   onPress={() => toggleRequire2FA(false)}
                   disabled={loading}
                 >
                   <Text style={[styles.toggleButtonText, !twoFAStatus.require2FA && styles.toggleButtonTextActive]}>
-                    Ixtiyoriy
+                    任意
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -458,15 +458,15 @@ export default function TwoFactorAuthScreen() {
       {showTOTPSetup && totpSecret && (
         <View style={styles.modal}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>TOTP Sozlash</Text>
-            
-            <Text style={styles.modalStep}>1. QR kodni skanerlang:</Text>
+            <Text style={styles.modalTitle}>TOTP 設定</Text>
+
+            <Text style={styles.modalStep}>1. QRコードをスキャンしてください:</Text>
             <Image source={{ uri: totpSecret.qrCode }} style={styles.qrCode} />
-            
-            <Text style={styles.modalStep}>2. Yoki qo'lda kod kiriting:</Text>
+
+            <Text style={styles.modalStep}>2. または手動で入力してください:</Text>
             <Text style={styles.secretKey}>{totpSecret.secret}</Text>
-            
-            <Text style={styles.modalStep}>3. Ilovaldan 6 raqamli kodni kiriting:</Text>
+
+            <Text style={styles.modalStep}>3. アプリの6桁のコードを入力してください:</Text>
             <TextInput
               style={styles.totpInput}
               placeholder="123456"
@@ -476,23 +476,23 @@ export default function TwoFactorAuthScreen() {
               maxLength={6}
               placeholderTextColor={colors.placeholder}
             />
-            
+
             <View style={styles.modalActions}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.cancelButton}
                 onPress={() => {
                   setShowTOTPSetup(false);
                   setTotpCode('');
                 }}
               >
-                <Text style={styles.cancelButtonText}>Bekor qilish</Text>
+                <Text style={styles.cancelButtonText}>キャンセル</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.confirmButton, loading && styles.buttonDisabled]}
                 onPress={enableTOTP}
                 disabled={loading}
               >
-                <Text style={styles.confirmButtonText}>Tasdiqlash</Text>
+                <Text style={styles.confirmButtonText}>確認</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -503,22 +503,22 @@ export default function TwoFactorAuthScreen() {
       {backupCodes.length > 0 && (
         <View style={styles.modal}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Backup Kodlar</Text>
+            <Text style={styles.modalTitle}>バックアップコード</Text>
             <Text style={styles.backupWarning}>
-              Bu kodlarni xavfsiz joyda saqlang! Har bir kod faqat bir marta ishlatiladi.
+              これらのコードを安全な場所に保管してください！各コードは一度だけ使用できます。
             </Text>
-            
+
             <View style={styles.backupCodes}>
               {backupCodes.map((code, index) => (
                 <Text key={index} style={styles.backupCode}>{code}</Text>
               ))}
             </View>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.confirmButton}
               onPress={() => setBackupCodes([])}
             >
-              <Text style={styles.confirmButtonText}>Men saqladim</Text>
+              <Text style={styles.confirmButtonText}>保存しました</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -824,4 +824,5 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border + '30',
   },
 });
+
 

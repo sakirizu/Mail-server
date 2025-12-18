@@ -9,7 +9,8 @@ class TwoFactorAuth {
     this.db = db;
     this.rpName = 'SMAIL';
     this.rpID = 'localhost';
-    this.origin = 'http://localhost:8082';
+    // Match frontend port
+    this.origin = 'http://localhost:8081';
   }
 
   // Generate TOTP secret and QR code
@@ -107,6 +108,7 @@ class TwoFactorAuth {
         return { success: false, error: 'Invalid TOTP code' };
       }
     } catch (error) {
+      console.error('enableTOTP error:', error);
       return { success: false, error: 'Failed to enable TOTP' };
     }
   }
@@ -182,55 +184,6 @@ class TwoFactorAuth {
     }
   }
 
-  // Generate backup codes
-  async generateBackupCodes(userId) {
-    try {
-      const codes = [];
-      for (let i = 0; i < 10; i++) {
-        codes.push(crypto.randomBytes(4).toString('hex').toUpperCase());
-      }
-
-      // Hash and store codes
-      for (const code of codes) {
-        const hash = await bcrypt.hash(code, 10);
-        await this.db.query(
-          'INSERT INTO user_backup_codes (user_id, code_hash) VALUES (?, ?)',
-          [userId, hash]
-        );
-      }
-
-      return codes;
-    } catch (error) {
-      throw new Error('Backup code generation failed');
-    }
-  }
-
-  // Verify backup code
-  async verifyBackupCode(userId, code) {
-    try {
-      const [rows] = await this.db.query(
-        'SELECT id, code_hash FROM user_backup_codes WHERE user_id = ? AND used = FALSE',
-        [userId]
-      );
-
-      for (const row of rows) {
-        const isValid = await bcrypt.compare(code.toUpperCase(), row.code_hash);
-        if (isValid) {
-          // Mark code as used
-          await this.db.query(
-            'UPDATE user_backup_codes SET used = TRUE, used_at = NOW() WHERE id = ?',
-            [row.id]
-          );
-          return { verified: true };
-        }
-      }
-
-      return { verified: false, error: 'Invalid backup code' };
-    } catch (error) {
-      return { verified: false, error: 'Backup code verification failed' };
-    }
-  }
-
   // Get user's 2FA status
   async get2FAStatus(userId) {
     try {
@@ -251,10 +204,10 @@ class TwoFactorAuth {
       };
 
       return {
-        totpEnabled: settings.totp_enabled,
+        totpEnabled: !!settings.totp_enabled,
         webauthnEnabled: false, // WebAuthn disabled for now
-        require2FA: settings.require_2fa,
-        webauthnKeysCount: 0, // WebAuthn disabled
+        require2FA: !!settings.require_2fa,
+        webauthnKeysCount: 0,
         backupCodesTotal: backupCodeRows[0].total || 0,
         backupCodesUsed: backupCodeRows[0].used || 0
       };
@@ -284,45 +237,35 @@ class TwoFactorAuth {
   // Delete user account with 2FA verification
   async deleteUserAccount(userId, totpCode, backupCode = null) {
     try {
-      // First verify 2FA
-      let isValid = false;
-      
+      let isValidData = { verified: false };
+
       if (totpCode) {
-        isValid = await this.verifyTOTP(userId, totpCode);
+        isValidData = await this.verifyTOTP(userId, totpCode);
       } else if (backupCode) {
-        isValid = await this.verifyBackupCode(userId, backupCode);
+        isValidData = await this.verifyBackupCode(userId, backupCode);
       }
-      
-      if (!isValid) {
+
+      if (!isValidData.verified) {
         throw new Error('Invalid 2FA code');
       }
 
-      // Start transaction
       await this.db.query('START TRANSACTION');
 
       try {
-        // Delete all 2FA related data
         await this.db.query('DELETE FROM user_totp WHERE user_id = ?', [userId]);
         await this.db.query('DELETE FROM user_2fa_settings WHERE user_id = ?', [userId]);
         await this.db.query('DELETE FROM user_backup_codes WHERE user_id = ?', [userId]);
         await this.db.query('DELETE FROM twofa_challenges WHERE user_id = ?', [userId]);
-        
-        // Delete user emails
         await this.db.query('DELETE FROM emails WHERE sender_id = ? OR recipient_id = ?', [userId, userId]);
-        
-        // Finally delete the user
         const [result] = await this.db.query('DELETE FROM users WHERE id = ?', [userId]);
-        
+
         if (result.affectedRows === 0) {
           throw new Error('User not found');
         }
 
-        // Commit transaction
         await this.db.query('COMMIT');
-        
         return { success: true, message: 'Account deleted successfully' };
       } catch (error) {
-        // Rollback on error
         await this.db.query('ROLLBACK');
         throw error;
       }
@@ -332,23 +275,19 @@ class TwoFactorAuth {
     }
   }
 
-  // Initiate account deletion (send challenge)
   async initiateAccountDeletion(userId) {
     try {
-      // Check if 2FA is enabled
       const status = await this.get2FAStatus(userId);
       if (!status.require2FA) {
         throw new Error('2FA is not enabled for this account');
       }
 
-      // Generate challenge token
       const challengeToken = crypto.randomBytes(32).toString('hex');
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-      // Store challenge
       await this.db.query(
-        'INSERT INTO twofa_challenges (user_id, challenge_token, challenge_type, expires_at) VALUES (?, ?, ?, ?)',
-        [userId, challengeToken, 'account_deletion', expiresAt]
+        'INSERT INTO twofa_challenges (user_id, session_token, challenge_type, expires_at, challenge_data) VALUES (?, ?, ?, ?, ?)',
+        [userId, challengeToken, 'totp', expiresAt, 'account_deletion']
       );
 
       return {

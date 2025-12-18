@@ -34,7 +34,7 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tempToken })
       });
-      
+
       const data = await response.json();
       if (data.error) {
         Alert.alert('エラー', data.error);
@@ -42,7 +42,7 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
       }
 
       setWebauthnSession(data.sessionToken);
-      
+
       // Start WebAuthn authentication
       if (navigator.credentials && navigator.credentials.get) {
         const credential = await navigator.credentials.get({
@@ -59,11 +59,11 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
         // Verify with server
         await verifyWebAuthn(credential, data.sessionToken);
       } else {
-        Alert.alert('エラー', 'WebAuthn brauzeringizda qo\'llab-quvvatlanmaydi');
+        Alert.alert('エラー', 'WebAuthnはご利用のブラウザでサポートされていません');
       }
     } catch (error) {
       console.error('WebAuthn auth error:', error);
-      Alert.alert('エラー', 'WebAuthn autentifikatsiyasida エラー');
+      Alert.alert('エラー', 'WebAuthn認証中にエラーが発生しました');
     } finally {
       setLoading(false);
     }
@@ -102,10 +102,10 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
           routes: [{ name: 'Main' }],
         });
       } else {
-        Alert.alert('エラー', data.error || 'WebAuthn tasdiqlashda エラー');
+        Alert.alert('エラー', data.error || 'WebAuthnの確認中にエラーが発生しました');
       }
     } catch (error) {
-      Alert.alert('エラー', 'WebAuthn tasdiqlashda エラー');
+      Alert.alert('エラー', 'WebAuthnの確認中にエラーが発生しました');
     } finally {
       setLoading(false);
     }
@@ -113,7 +113,7 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
 
   const verifyTOTP = async () => {
     if (!totpCode || totpCode.length !== 6) {
-      Alert.alert('エラー', '6 raqamli TOTP kodni kiriting');
+      Alert.alert('エラー', '6桁の認証コードを入力してください');
       return;
     }
 
@@ -141,18 +141,18 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
       if (data.token && data.user) {
         const userWithToken = { ...data.user, token: data.token };
         login(userWithToken);
-        Alert.alert('Muvaffaqiyat!', 'Hisobingizga kirildi!');
+        Alert.alert('成功！', 'ログインしました！');
         navigation.reset({
           index: 0,
           routes: [{ name: 'Main' }],
         });
       } else {
-        Alert.alert('エラー', data.error || 'TOTP kod noto\'g\'ri');
+        Alert.alert('エラー', data.error || '認証コードが正しくありません');
         setTotpCode('');
       }
     } catch (error) {
       console.error('TOTP verification error:', error);
-      Alert.alert('エラー', 'Server bilan bog\'lanishda エラー');
+      Alert.alert('エラー', 'サーバーとの通信中にエラーが発生しました');
     } finally {
       setLoading(false);
     }
@@ -160,7 +160,7 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
 
   const verifyBackupCode = async () => {
     if (!backupCode || backupCode.length !== 8) {
-      Alert.alert('エラー', '8 raqamli backup kodni kiriting');
+      Alert.alert('エラー', '8桁のバックアップコードを入力してください');
       return;
     }
 
@@ -185,11 +185,11 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
           routes: [{ name: 'Main' }],
         });
       } else {
-        Alert.alert('エラー', data.error || 'Backup kod noto\'g\'ri yoki ishlatilgan');
+        Alert.alert('エラー', data.error || 'バックアップコードが正しくないか、既に使用されています');
         setBackupCode('');
       }
     } catch (error) {
-      Alert.alert('エラー', 'Backup kod tasdiqlashda エラー');
+      Alert.alert('エラー', 'バックアップコードの確認中にエラーが発生しました');
     } finally {
       setLoading(false);
     }
@@ -205,10 +205,10 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
         {/* Header */}
         <View style={styles.headerContainer}>
           <Text style={[styles.title, isMobile && styles.titleMobile]}>
-            Ikki Bosqichli Tasdiqlash
+            二段階認証 (2FA)
           </Text>
           <Text style={[styles.subtitle, isMobile && styles.subtitleMobile]}>
-            Hisobingizga kirish uchun 2FA ni tasdiqlang
+            アカウントを保護するための追加認証を行ってください
           </Text>
         </View>
 
@@ -226,7 +226,7 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
                 styles.methodText,
                 selectedMethod === 'totp' && styles.methodTextActive
               ]}>
-                🔐 Authenticator App
+                🔐 認証アプリ (TOTP)
               </Text>
             </TouchableOpacity>
           )}
@@ -246,7 +246,7 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
                 styles.methodText,
                 selectedMethod === 'webauthn' && styles.methodTextActive
               ]}>
-                🔑 Security Key
+                🔑 セキュリティキー (WebAuthn)
               </Text>
             </TouchableOpacity>
           )}
@@ -263,7 +263,7 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
                 styles.methodText,
                 selectedMethod === 'backup' && styles.methodTextActive
               ]}>
-                📋 Backup Code
+                📋 バックアップコード
               </Text>
             </TouchableOpacity>
           )}
@@ -274,7 +274,7 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
           {selectedMethod === 'totp' && (
             <>
               <Text style={styles.inputLabel}>
-                Google Authenticator yoki Authy dan 6 raqamli kodni kiriting:
+                Google Authenticator 等のアプリに表示されている6桁のコードを入力してください:
               </Text>
               <TextInput
                 style={[styles.codeInput, isMobile && styles.codeInputMobile]}
@@ -292,7 +292,7 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
                 disabled={loading || totpCode.length !== 6}
               >
                 <Text style={styles.verifyButtonText}>
-                  {loading ? 'Tekshirilmoqda...' : 'Tasdiqlash'}
+                  {loading ? '確認中...' : '確認する'}
                 </Text>
               </TouchableOpacity>
             </>
@@ -301,7 +301,7 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
           {selectedMethod === 'webauthn' && (
             <View style={styles.webauthnContainer}>
               <Text style={styles.inputLabel}>
-                Security key ni kompyuterga ulang va tugmasini bosing
+                セキュリティキーを接続し、ボタンを押してください
               </Text>
               <View style={styles.webauthnStatus}>
                 <Text style={styles.webauthnStatusText}>
@@ -341,7 +341,7 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
                 disabled={loading || backupCode.length !== 8}
               >
                 <Text style={styles.verifyButtonText}>
-                  {loading ? 'Tekshirilmoqda...' : 'Tasdiqlash'}
+                  {loading ? '確認中...' : '確認する'}
                 </Text>
               </TouchableOpacity>
             </>
@@ -354,7 +354,7 @@ export default function TwoFactorVerifyScreen({ route, navigation }) {
           onPress={handleBack}
         >
           <Ionicons name="arrow-back" size={20} color="#007AFF" style={{ marginRight: 6 }} />
-          <Text style={styles.backButtonText}>Orqaga qaytish</Text>
+          <Text style={styles.backButtonText}>戻る</Text>
         </TouchableOpacity>
       </View>
     </View>
