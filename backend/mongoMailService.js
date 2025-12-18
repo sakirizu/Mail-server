@@ -1,4 +1,4 @@
-const { MongoClient, ObjectId } = require('mongodb');
+﻿const { MongoClient, ObjectId } = require('mongodb');
 
 class MongoMailService {
   constructor() {
@@ -9,76 +9,56 @@ class MongoMailService {
 
   async connect() {
     try {
-      // MongoDB connection URLs with and without authentication
-      const mongoUrls = [
-        // Try without authentication first
-        'mongodb://localhost:27017/stormysecuritynosql',
-        'mongodb://127.0.0.1:27017/stormysecuritynosql',
-        // Try with common default credentials
-        'mongodb://admin:admin@localhost:27017/stormysecuritynosql?authSource=admin',
-        'mongodb://root:root@localhost:27017/stormysecuritynosql?authSource=admin',
-        'mongodb://user:password@localhost:27017/stormysecuritynosql?authSource=stormysecuritynosql',
-        // Try local connections
-        'mongodb://localhost:27017/',
-        'mongodb://127.0.0.1:27017/'
-      ];
-      
-      console.log('🔄 Attempting MongoDB connection...');
-      
-      for (const mongoUrl of mongoUrls) {
-        try {
-          console.log(`🔗 Trying: ${mongoUrl.replace(/\/\/.*@/, '//***:***@')}`);
-          
-          this.client = new MongoClient(mongoUrl, {
-            serverSelectionTimeoutMS: 3000,
-            connectTimeoutMS: 5000,
-            maxPoolSize: 5
-          });
-          
-          await this.client.connect();
-          
-          // Use stormysecuritynosql database
-          this.db = this.client.db('stormysecuritynosql');
-          this.isConnected = true;
-          
-          console.log('✅ MongoDB connected successfully');
-          console.log(`📊 Database: stormysecuritynosql`);
-          
-          // Test the connection with simple database operation
-          try {
-            const result = await this.db.runCommand({ ping: 1 });
-            console.log('🏓 MongoDB ping successful');
-          } catch (pingError) {
-            console.log('⚠️  Ping failed, but connection established');
-          }
-          
-          // Create collections if they don't exist
-          await this.initializeCollections();
-          
-          return true;
-        } catch (error) {
-          console.log(`❌ Failed: ${error.message}`);
-          if (this.client) {
-            await this.client.close().catch(() => {});
-            this.client = null;
-          }
-        }
+      // Build connection string from env or default to local ssmail
+      const mongoUrl = process.env.MONGODB_URL || 'mongodb://localhost:27017/ssmail';
+      const dbName = mongoUrl.split('/').pop().split('?')[0] || 'ssmail';
+
+      console.log(`🔄 Attempting MongoDB connection...`);
+      // Hide password in logs if present
+      console.log(`🔗 Trying: ${mongoUrl.replace(/\/\/.*@/, '//***:***@')}`);
+
+      this.client = new MongoClient(mongoUrl, {
+        serverSelectionTimeoutMS: 5000,
+        connectTimeoutMS: 10000
+      });
+
+      await this.client.connect();
+
+      this.db = this.client.db(dbName);
+      this.isConnected = true;
+
+      console.log('✅ MongoDB connected successfully');
+      console.log(`📊 Database: ${dbName}`);
+
+      // Test the connection with simple database operation
+      try {
+        await this.db.runCommand({ ping: 1 });
+        console.log('🏓 MongoDB ping successful');
+      } catch (pingError) {
+        console.log('⚠️  Ping failed, but connection established');
       }
-      
-      throw new Error('All MongoDB connection attempts failed');
+
+      // Create collections if they don't exist
+      await this.initializeCollections();
+
+      return true;
     } catch (error) {
       console.error('❌ MongoDB connection failed:', error.message);
       this.isConnected = false;
+      if (this.client) {
+        await this.client.close().catch(() => { });
+        this.client = null;
+      }
       return false;
     }
   }
 
   async initializeCollections() {
     try {
-      // Create separate collections for different mail types
+      // Create mails collection with indexes
       let collections = [];
       let collectionNames = [];
-      
+
       try {
         collections = await this.db.listCollections().toArray();
         collectionNames = collections.map(c => c.name);
@@ -87,68 +67,55 @@ class MongoMailService {
         collectionNames = []; // Assume collections don't exist
       }
 
-      // Create collections for different mail folders
-      const requiredCollections = [
-        { name: 'mails_inbox', description: '📥 Inbox mails' },
-        { name: 'mails_sent', description: '📤 Sent mails' },
-        { name: 'mails_drafts', description: '📝 Draft mails' },
-        { name: 'mails_spam', description: '🚫 Spam mails' },
-        { name: 'mails_trash', description: '🗑️ Deleted mails' },
-        { name: 'mails_archive', description: '📦 Archived mails' },
-        { name: 'attachments', description: '📎 Mail attachments' }
-      ];
-
-      for (const collection of requiredCollections) {
-        if (!collectionNames.includes(collection.name)) {
-          try {
-            await this.db.createCollection(collection.name);
-            console.log(`${collection.description} collection created`);
-          } catch (error) {
-            console.log(`${collection.description} collection might already exist`);
-          }
+      if (!collectionNames.includes('mails')) {
+        try {
+          await this.db.createCollection('mails');
+          console.log('📧 Created mails collection');
+        } catch (error) {
+          console.log('📧 Mails collection might already exist');
         }
       }
 
-      // Create indexes for better performance
+      if (!collectionNames.includes('drafts')) {
+        try {
+          await this.db.createCollection('drafts');
+          console.log('📝 Created drafts collection');
+        } catch (error) {
+          console.log('📝 Drafts collection might already exist');
+        }
+      }
+
+      if (!collectionNames.includes('attachments')) {
+        try {
+          await this.db.createCollection('attachments');
+          console.log('📎 Created attachments collection');
+        } catch (error) {
+          console.log('📎 Attachments collection might already exist');
+        }
+      }
+
+      // Create indexes for better performance (ignore errors if auth required)
       try {
-        // Inbox indexes
-        await this.db.collection('mails_inbox').createIndex({ "to": 1 });
-        await this.db.collection('mails_inbox').createIndex({ "from": 1 });
-        await this.db.collection('mails_inbox').createIndex({ "date": -1 });
-        await this.db.collection('mails_inbox').createIndex({ "isRead": 1 });
-        await this.db.collection('mails_inbox').createIndex({ "subject": "text", "body": "text" });
-
-        // Sent indexes
-        await this.db.collection('mails_sent').createIndex({ "from": 1 });
-        await this.db.collection('mails_sent').createIndex({ "to": 1 });
-        await this.db.collection('mails_sent').createIndex({ "date": -1 });
-        await this.db.collection('mails_sent').createIndex({ "subject": "text", "body": "text" });
-
-        // Drafts indexes
-        await this.db.collection('mails_drafts').createIndex({ "from": 1 });
-        await this.db.collection('mails_drafts').createIndex({ "updatedAt": -1 });
-
-        // Spam indexes
-        await this.db.collection('mails_spam').createIndex({ "to": 1 });
-        await this.db.collection('mails_spam').createIndex({ "date": -1 });
-
-        // Trash indexes
-        await this.db.collection('mails_trash').createIndex({ "deletedAt": -1 });
-        await this.db.collection('mails_trash').createIndex({ "from": 1 });
-        await this.db.collection('mails_trash').createIndex({ "to": 1 });
+        await this.db.collection('mails').createIndex({ "to": 1 });
+        await this.db.collection('mails').createIndex({ "from": 1 });
+        await this.db.collection('mails').createIndex({ "date": -1 });
+        await this.db.collection('mails').createIndex({ "subject": "text", "body": "text" });
+        await this.db.collection('mails').createIndex({ "isDeleted": 1 });
+        await this.db.collection('mails').createIndex({ "isSpam": 1 });
+        await this.db.collection('mails').createIndex({ "isDraft": 1 });
 
         console.log('📚 Database indexes created successfully');
       } catch (indexError) {
         console.log('⚠️  Index creation skipped (might require auth)');
       }
-      
-      // Insert sample data if collections are empty
+
+      // Insert sample data if collection is empty
       try {
-        const inboxCount = await this.db.collection('mails_inbox').countDocuments();
-        if (inboxCount === 0) {
+        const mailCount = await this.db.collection('mails').countDocuments();
+        if (mailCount === 0) {
           await this.insertSampleData();
         } else {
-          console.log(`📧 Found ${inboxCount} existing inbox mails`);
+          console.log(`📧 Found ${mailCount} existing mails`);
         }
       } catch (countError) {
         console.log('⚠️  Cannot access collection data (auth required)');
@@ -231,37 +198,16 @@ class MongoMailService {
     if (!this.isConnected) {
       return { success: false, error: 'MongoDB not connected' };
     }
-    
+
     try {
       const now = new Date();
-      
-      // Determine which collection to use based on folder
-      let collectionName = 'mails_inbox'; // default
-      
-      if (mailData.folder === 'sent') {
-        collectionName = 'mails_sent';
-      } else if (mailData.folder === 'drafts' || mailData.isDraft) {
-        collectionName = 'mails_drafts';
-      } else if (mailData.folder === 'spam' || mailData.isSpam) {
-        collectionName = 'mails_spam';
-      } else if (mailData.folder === 'trash' || mailData.isDeleted) {
-        collectionName = 'mails_trash';
-      } else if (mailData.folder === 'archive') {
-        collectionName = 'mails_archive';
-      } else if (mailData.folder === 'inbox') {
-        collectionName = 'mails_inbox';
-      }
-      
-      console.log(`📧 Saving mail to collection: ${collectionName}`);
-      
-      const result = await this.db.collection(collectionName).insertOne({
+      const result = await this.db.collection('mails').insertOne({
         ...mailData,
         date: mailData.date || now,
         created_at: now,
         createdAt: now,
         updatedAt: now
       });
-      
       return { success: true, mailId: result.insertedId };
     } catch (error) {
       if (error.codeName === 'Unauthorized') {
@@ -275,18 +221,6 @@ class MongoMailService {
 
   async getMailsByUser(userEmail, options = {}) {
     try {
-      // Check if MongoDB is connected
-      if (!this.isConnected || !this.db) {
-        console.error('❌ MongoDB not connected');
-        return { 
-          success: false, 
-          error: 'Database connection not available',
-          mails: [],
-          totalCount: 0,
-          hasMore: false
-        };
-      }
-
       const {
         folder = 'inbox',
         limit = 50,
@@ -296,70 +230,60 @@ class MongoMailService {
         search = null
       } = options;
 
-      // Determine which collection to query
-      let collectionName = 'mails_inbox';
       let query = {};
-      
+
       switch (folder) {
         case 'inbox':
-          collectionName = 'mails_inbox';
-          query = { 
-            to: { $in: [userEmail] }
+          query = {
+            to: { $in: [userEmail] },
+            isDeleted: { $ne: true },
+            isSpam: { $ne: true },
+            isDraft: { $ne: true }
           };
           break;
         case 'sent':
-          collectionName = 'mails_sent';
-          query = { 
-            from: userEmail
+          query = {
+            from: userEmail,
+            isDeleted: { $ne: true },
+            isDraft: { $ne: true }
           };
           break;
         case 'drafts':
-          collectionName = 'mails_drafts';
-          query = { 
-            from: userEmail
+          query = {
+            from: userEmail,
+            isDraft: true,
+            isDeleted: { $ne: true }
           };
           break;
         case 'spam':
-          collectionName = 'mails_spam';
-          query = { 
-            to: { $in: [userEmail] }
+          query = {
+            to: { $in: [userEmail] },
+            isSpam: true,
+            isDeleted: { $ne: true }
           };
           break;
         case 'trash':
-          collectionName = 'mails_trash';
           query = {
             $or: [
               { to: { $in: [userEmail] } },
               { from: userEmail }
-            ]
-          };
-          break;
-        case 'archive':
-          collectionName = 'mails_archive';
-          query = {
-            $or: [
-              { to: { $in: [userEmail] } },
-              { from: userEmail }
-            ]
+            ],
+            isDeleted: true
           };
           break;
       }
 
-      // Search functionality
       if (search) {
         query.$text = { $search: search };
       }
 
-      console.log(`📧 Querying collection: ${collectionName} for user: ${userEmail}`);
-
-      const mails = await this.db.collection(collectionName)
+      const mails = await this.db.collection('mails')
         .find(query)
         .sort({ [sortBy]: sortOrder })
         .skip(skip)
         .limit(limit)
         .toArray();
 
-      // Normalize read status field
       const normalizedMails = mails.map(mail => ({
         ...mail,
         read_status: mail.read_status || mail.readStatus || mail.isRead || false,
@@ -368,9 +292,7 @@ class MongoMailService {
         recipient: mail.recipient || (Array.isArray(mail.to) ? mail.to[0] : mail.to)
       }));
 
-      const totalCount = await this.db.collection(collectionName).countDocuments(query);
-
-      console.log(`📧 Found ${normalizedMails.length} mails in ${collectionName}`);
+      const totalCount = await this.db.collection('mails').countDocuments(query);
 
       return {
         success: true,
@@ -386,24 +308,19 @@ class MongoMailService {
 
   async getMailById(mailId, userEmail) {
     try {
-      // Search in all collections
-      const collections = ['mails_inbox', 'mails_sent', 'mails_drafts', 'mails_spam', 'mails_trash', 'mails_archive'];
-      
-      for (const collectionName of collections) {
-        const mail = await this.db.collection(collectionName).findOne({
-          _id: new ObjectId(mailId),
-          $or: [
-            { to: { $in: [userEmail] } },
-            { from: userEmail }
-          ]
-        });
-        
-        if (mail) {
-          return { success: true, mail, collection: collectionName };
-        }
+      const mail = await this.db.collection('mails').findOne({
+        _id: new ObjectId(mailId),
+        $or: [
+          { to: { $in: [userEmail] } },
+          { from: userEmail }
+        ]
+      });
+
+      if (!mail) {
+        return { success: false, error: 'Mail not found' };
       }
 
-      return { success: false, error: 'Mail not found' };
+      return { success: true, mail };
     } catch (error) {
       console.error('Error getting mail by ID:', error);
       return { success: false, error: error.message };
@@ -412,15 +329,7 @@ class MongoMailService {
 
   async updateMail(mailId, updateData, userEmail) {
     try {
-      // First find which collection the mail is in
-      const mailResult = await this.getMailById(mailId, userEmail);
-      if (!mailResult.success) {
-        return { success: false, error: 'Mail not found' };
-      }
-      
-      const collectionName = mailResult.collection;
-      
-      const result = await this.db.collection(collectionName).updateOne(
+      const result = await this.db.collection('mails').updateOne(
         {
           _id: new ObjectId(mailId),
           $or: [
@@ -449,41 +358,21 @@ class MongoMailService {
 
   async deleteMail(mailId, userEmail, permanent = false) {
     try {
-      // First find which collection the mail is in
-      const mailResult = await this.getMailById(mailId, userEmail);
-      if (!mailResult.success) {
-        return { success: false, error: 'Mail not found' };
-      }
-      
-      const sourceCollection = mailResult.collection;
-      
       if (permanent) {
-        const result = await this.db.collection(sourceCollection).deleteOne({
+        const result = await this.db.collection('mails').deleteOne({
           _id: new ObjectId(mailId),
           $or: [
             { to: { $in: [userEmail] } },
             { from: userEmail }
           ]
         });
-        
+
         if (result.deletedCount === 0) {
           return { success: false, error: 'Mail not found' };
         }
       } else {
-        // Move to trash collection
-        const mail = mailResult.mail;
-        
-        // Delete from source collection
-        await this.db.collection(sourceCollection).deleteOne({
-          _id: new ObjectId(mailId)
-        });
-        
-        // Insert into trash collection
-        await this.db.collection('mails_trash').insertOne({
-          ...mail,
-          deletedAt: new Date(),
-          previousFolder: sourceCollection
-        });
+        const result = await this.updateMail(mailId, { isDeleted: true }, userEmail);
+        return result;
       }
 
       return { success: true };
@@ -493,13 +382,11 @@ class MongoMailService {
     }
   }
 
-  // Draft operations
   async saveDraft(draftData) {
     try {
-      const result = await this.db.collection('mails_drafts').insertOne({
+      const result = await this.db.collection('mails').insertOne({
         ...draftData,
         isDraft: true,
-        folder: 'drafts',
         createdAt: new Date(),
         updatedAt: new Date()
       });
@@ -513,10 +400,11 @@ class MongoMailService {
 
   async updateDraft(draftId, draftData, userEmail) {
     try {
-      const result = await this.db.collection('mails_drafts').updateOne(
+      const result = await this.db.collection('mails').updateOne(
         {
           _id: new ObjectId(draftId),
-          from: userEmail
+          from: userEmail,
+          isDraft: true
         },
         {
           $set: {
@@ -537,98 +425,93 @@ class MongoMailService {
     }
   }
 
-  // Statistics
   async getMailStatistics(userEmail, dateRange = 30) {
     try {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - dateRange);
 
-      // Count from separate collections
-      const totalReceived = await this.db.collection('mails_inbox').countDocuments({
-        to: { $in: [userEmail] }
-      });
-
-      const totalSent = await this.db.collection('mails_sent').countDocuments({
-        from: userEmail
-      });
-
-      const totalDrafts = await this.db.collection('mails_drafts').countDocuments({
-        from: userEmail
-      });
-      
-      const totalSpam = await this.db.collection('mails_spam').countDocuments({
-        to: { $in: [userEmail] }
-      });
-      
-      const totalTrash = await this.db.collection('mails_trash').countDocuments({
-        $or: [
-          { to: { $in: [userEmail] } },
-          { from: userEmail }
-        ]
-      });
-
-      // Unread count only for inbox emails
-      const unreadCount = await this.db.collection('mails_inbox').countDocuments({
-        to: { $in: [userEmail] },
-        $or: [
-          { readStatus: { $ne: true } },
-          { read_status: { $ne: true } },
-          { isRead: { $ne: true } },
-          { readStatus: { $exists: false } },
-          { read_status: { $exists: false } },
-          { isRead: { $exists: false } }
-        ]
-      });
-
-      // Get daily statistics from all collections
-      const collections = ['mails_inbox', 'mails_sent'];
-      let dailyStats = [];
-      
-      for (const collectionName of collections) {
-        const pipeline = [
-          {
-            $match: {
-              $or: [
-                { to: { $in: [userEmail] } },
-                { from: userEmail }
-              ],
-              date: { $gte: startDate }
-            }
-          },
-          {
-            $group: {
-              _id: {
-                date: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
-                type: {
-                  $cond: [
-                    { $eq: ["$from", userEmail] },
-                    "sent",
-                    "received"
-                  ]
-                }
-              },
-              count: { $sum: 1 }
-            }
-          },
-          {
-            $sort: { "_id.date": 1 }
+      const pipeline = [
+        {
+          $match: {
+            $or: [
+              { to: { $in: [userEmail] } },
+              { from: userEmail }
+            ],
+            date: { $gte: startDate }
           }
-        ];
+        },
+        {
+          $group: {
+            _id: {
+              date: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+              type: {
+                $cond: [
+                  { $eq: ["$from", userEmail] },
+                  "sent",
+                  "received"
+                ]
+              }
+            },
+            count: { $sum: 1 }
+          }
+        },
+        {
+          $sort: { "_id.date": 1 }
+        }
+      ];
 
-        const stats = await this.db.collection(collectionName).aggregate(pipeline).toArray();
-        dailyStats = [...dailyStats, ...stats];
-      }
+      const stats = await this.db.collection('mails').aggregate(pipeline).toArray();
+
+      const totalReceived = await this.db.collection('mails').countDocuments({
+        to: { $in: [userEmail] },
+        isDraft: { $ne: true },
+        isDeleted: { $ne: true }
+      });
+
+      const totalSent = await this.db.collection('mails').countDocuments({
+        from: userEmail,
+        isDraft: { $ne: true },
+        isDeleted: { $ne: true }
+      });
+
+      const totalDrafts = await this.db.collection('mails').countDocuments({
+        from: userEmail,
+        isDraft: true,
+        isDeleted: { $ne: true }
+      });
+
+      const unreadCount = await this.db.collection('mails').countDocuments({
+        to: { $in: [userEmail] },
+        $and: [
+          {
+            $or: [
+              { folder: 'inbox' },
+              { folder: { $exists: false } }
+            ]
+          },
+          {
+            $or: [
+              { readStatus: { $ne: true } },
+              { read_status: { $ne: true } },
+              { isRead: { $ne: true } },
+              { readStatus: { $exists: false } },
+              { read_status: { $exists: false } },
+              { isRead: { $exists: false } }
+            ]
+          }
+        ],
+        isDeleted: { $ne: true },
+        isDraft: { $ne: true }
+      });
 
       return {
         success: true,
         statistics: {
-          daily: dailyStats,
+          daily: stats,
           totals: {
             received: totalReceived,
             sent: totalSent,
-            drafts: totalDrafts,
-            spam: totalSpam,
-            trash: totalTrash
+            drafts: totalDrafts
           },
           unread_count: unreadCount
         }
@@ -639,7 +522,6 @@ class MongoMailService {
     }
   }
 
-  // Search functionality - search across all collections
   async searchMails(userEmail, searchQuery, options = {}) {
     try {
       const { limit = 20, skip = 0 } = options;
@@ -653,6 +535,9 @@ class MongoMailService {
             ]
           },
           {
+            isDeleted: { $ne: true }
+          },
+          {
             $or: [
               { subject: { $regex: searchQuery, $options: 'i' } },
               { body: { $regex: searchQuery, $options: 'i' } },
@@ -662,28 +547,20 @@ class MongoMailService {
         ]
       };
 
-      // Search across all collections
-      const collections = ['mails_inbox', 'mails_sent', 'mails_drafts', 'mails_spam', 'mails_archive'];
-      let allMails = [];
-      
-      for (const collectionName of collections) {
-        const mails = await this.db.collection(collectionName)
-          .find(query)
-          .sort({ date: -1 })
-          .toArray();
-        
-        allMails = [...allMails, ...mails];
-      }
-      
-      // Sort by date and apply pagination
-      allMails.sort((a, b) => new Date(b.date) - new Date(a.date));
-      const paginatedMails = allMails.slice(skip, skip + limit);
-      
+      const mails = await this.db.collection('mails')
+        .find(query)
+        .sort({ date: -1 })
+        .skip(skip)
+        .limit(limit)
+        .toArray();
+
+      const totalCount = await this.db.collection('mails').countDocuments(query);
+
       return {
         success: true,
-        mails: paginatedMails,
-        totalCount: allMails.length,
-        hasMore: (skip + limit) < allMails.length
+        mails,
+        totalCount,
+        hasMore: (skip + limit) < totalCount
       };
     } catch (error) {
       console.error('Error searching mails:', error);
@@ -697,14 +574,6 @@ class MongoMailService {
         return { success: false, error: 'Not connected to MongoDB' };
       }
 
-      // First find which collection the mail is in
-      const mailResult = await this.getMailById(mailId, userEmail);
-      if (!mailResult.success) {
-        return { success: false, error: 'Mail not found' };
-      }
-      
-      const collectionName = mailResult.collection;
-
       const query = {
         _id: ObjectId.isValid(mailId) ? new ObjectId(mailId) : mailId,
         $or: [
@@ -713,15 +582,15 @@ class MongoMailService {
         ]
       };
 
-      const result = await this.db.collection(collectionName).updateOne(
+      const result = await this.db.collection('mails').updateOne(
         query,
-        { 
-          $set: { 
+        {
+          $set: {
             isRead: true,
             read_status: true,
             readStatus: true,
             readAt: new Date()
-          } 
+          }
         }
       );
 
@@ -731,35 +600,36 @@ class MongoMailService {
       };
     } catch (error) {
       console.error('❌ MongoDB mark as read error:', error);
-      return { 
-        success: false, 
-        error: 'Failed to mark email as read in MongoDB' 
+      return {
+        success: false,
+        error: 'Failed to mark email as read in MongoDB'
       };
     }
   }
 
-  // Clear all drafts for a user
   async clearDrafts(userEmail) {
     try {
       if (!this.isConnected) {
         await this.connect();
       }
-      
-      const result = await this.db.collection('mails_drafts').deleteMany({
-        from: userEmail
+
+      const result = await this.db.collection('mails').deleteMany({
+        from: userEmail,
+        isDraft: true,
+        isDeleted: { $ne: true }
       });
 
       console.log(`✅ Cleared ${result.deletedCount} drafts for ${userEmail}`);
-      
+
       return {
         success: true,
         deletedCount: result.deletedCount
       };
     } catch (error) {
       console.error('❌ MongoDB clear drafts error:', error);
-      return { 
-        success: false, 
-        error: 'Failed to clear drafts in MongoDB' 
+      return {
+        success: false,
+        error: 'Failed to clear drafts in MongoDB'
       };
     }
   }

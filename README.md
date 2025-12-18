@@ -1,220 +1,95 @@
-# 📧 SMAIL - セキュアメールシステム 要件定義書
+# 📧 SMAIL - Secure Mail System (Secured by AI)
+### 🇯🇵 日本語要件定義書 / 🇺🇿 O'zbek tili Talabnomasi
 
-> **最終更新**: 2025-12-18 14:12
-> **プロジェクトバージョン**: 1.2.0
-> **進捗**: 90% 完了
-
----
-
-## 📋 目次
-
-1. [プロジェクト概要](#プロジェクト概要)
-2. [機能要件](#機能要件)
-3. [実装状況](#実装状況)
-4. [今後の開発予定](#今後の開発予定)
-5. [セットアップ手順](#セットアップ手順)
-6. [技術スタック](#技術スタック)
+> **Last Updated / Oxirgi yangilanish**: 2024-12-18
+> **Version / Versiya**: 1.2.0
+> **Progress / Progress**: 92.5% 🏁
 
 ---
 
-## 📌 プロジェクト概要
+## 📌 1. Project Overview / Loyiha haqida qisqacha
 
-**SMAIL (SSM Mail System)** は、セキュリティを重視したモダンなメールアプリケーションです。
-
-### 主な特徴
-- 🔐 **二段階認証 (2FA)** - TOTP、WebAuthn、バックアップコードに対応
-- 🛡️ **AIフィッシング検知** - JPCERT/CC連携、9,000件以上のフィッシングURLをリアルタイムブロック
-- 📊 **危険度スコアリング** - 0-100%の危険度を算出して表示
-- 🔍 **類似URL検出** - 公式サイトに似せた偽URLを検出
-- 🇯🇵 **完全日本語UI** - 日本語に最適化されたインターフェース
-- 📱 **クロスプラットフォーム** - Web、iOS、Androidに対応
-- 🎨 **モダンUI/UX** - Material Design ベースのデザイン
+| 🇯🇵 項目 (JP) | 🇺🇿 Element (UZ) | 説明 / Tavsif |
+| :--- | :--- | :--- |
+| **Name** | **Nomi** | **SMAIL** (SSM Mail System) |
+| **Concept** | **Konsepsiya** | 🔐 Security-Focused Modern Email App |
+| **Key Tech** | **Texnologiyalar** | React Native, Node.js, MySQL, MongoDB, Python (AI) |
 
 ---
 
-## ✅ 機能要件
+## 🛡️ 💎 NEW: AI Phishing Detector / AI Fishing detektori
+**🇯🇵 12月18日実装：業界標準URLリスト（JPCERT/CC）と連携した強力な検知機能。**
+**🇺🇿 18-dekabrda qo'shildi: Xalqaro JPCERT/CC URL bazasi bilan integratsiya qilingan kuchli fishingga qarshi tizim.**
 
-### 1. 認証機能
+### 🇯🇵 主な検知ロジック:
+1.  **JPCERT/CC リアルタイム連携**: 9,200件以上の既知フィッシングサイトを即座にブロック。
+2.  **類似URL検知 (Levenshtein)**: `amazon-co-jp.xyz` のような偽サイトを自動検知。
+3.  **危険キーワード分析**: 「緊急」「口座が凍結」などの危険な日本語・英語を分析。
+4.  **リスクスコアリング**: 0-100%で危険度を表示し、50%以上は自動的にSPAMフォルダへ。
 
-| 機能 | 状態 | 説明 |
-|------|------|------|
-| ユーザー登録 | ✅ 完了 | ユーザー名、パスワードで登録 |
-| ログイン | ✅ 完了 | JWT認証 |
-| ログアウト | ✅ 完了 | トークン破棄 |
-| 2FA (TOTP) | ✅ 完了 | Google Authenticator対応 |
-| 2FA (WebAuthn) | ✅ 完了 | 生体認証/セキュリティキー |
-| バックアップコード | ✅ 完了 | 10個の緊急用コード |
-| セッション管理 | ✅ 完了 | デバイス別セッション |
-
-### 2. メール機能
-
-| 機能 | 状態 | 説明 |
-|------|------|------|
-| メール受信 | ✅ 完了 | リアルタイム受信 |
-| メール送信 | ✅ 完了 | TO/CC/BCC対応 + フィッシングチェック |
-| 下書き保存 | ✅ 完了 | 自動保存機能 |
-| メール削除 | ✅ 完了 | ゴミ箱移動 |
-| メール検索 | ✅ 完了 | 件名/本文検索 |
-| スター機能 | ✅ 完了 | 重要メールマーク |
-| 既読/未読管理 | ✅ 完了 | 既読状態の同期 |
-| フォルダ管理 | ✅ 完了 | 受信/送信/下書き/迷惑メール/ゴミ箱 |
-
-### 3. セキュリティ機能
-
-| 機能 | 状態 | 説明 |
-|------|------|------|
-| パスワードハッシュ化 | ✅ 完了 | bcrypt使用 |
-| JWT認証 | ✅ 完了 | 7日間有効 |
-| フィッシング検知 | ✅ 完了 | AI搭載、JPCERT/CC連携 |
-| 類似URL検出 | ✅ 完了 | Levenshtein距離による検出 |
-| 危険度スコアリング | ✅ 完了 | 0-100%のリスクスコア |
-| 迷惑メール自動振り分け | ✅ 完了 | スコア50以上でspamフォルダへ |
-
-### 4. UI/UX機能
-
-| 機能 | 状態 | 説明 |
-|------|------|------|
-| 日本語インターフェース | ✅ 完了 | 完全日本語化 |
-| レスポンシブデザイン | ✅ 完了 | モバイル/デスクトップ対応 |
-| Android最適化 | ✅ 完了 | Material Design準拠 |
-| サイドバーナビゲーション | ✅ 完了 | スライドアニメーション |
-| メール作成モーダル | ✅ 完了 | ブラーエフェクト |
-| フィッシング警告表示 | ✅ 完了 | メール詳細画面に危険度バナー |
-
-### 5. 統計・分析機能
-
-| 機能 | 状態 | 説明 |
-|------|------|------|
-| メール統計 | ✅ 完了 | 送受信数グラフ |
-| フィッシング検知統計 | ✅ 完了 | ブロック数表示 |
+### 🇺🇿 Asosiy deteksiya mantiqi:
+1.  **JPCERT/CC Real-vaqt**: 9,200 tadan ortiq xavfli saytlarni darhol bloklaydi.
+2.  **O'xshash URL (Levenshtein)**: `amazon-co-jp.xyz` kabi soxta saytlarni avtomatik topadi.
+3.  **Xavfli so'zlar tahlili**: "Urgent", "Hisobingiz bloklandi" kabi so'zlarni tahlil qiladi (JP/EN).
+4.  **Xavf darajasi (Score)**: 0-100% gacha xavf darajasini hisoblaydi, 50% dan oshsa avtomatik SPAMga tashlaydi.
 
 ---
 
-## 📊 実装状況サマリー
+## ✅ Feature status / Funktsiyalar holati
 
-```
-全体進捗: █████████████████░░░ 85%
+| 🇯🇵 機能 | 🇺🇿 Funktsiya | Status |
+| :--- | :--- | :--- |
+| **2FA Authentication** | **2FA Autentifikatsiya** | ✅ 100% (TOTP, WebAuthn) |
+| **Mail Management** | **Email boshqaruvi** | ✅ 100% (Inbox, Sent, Spam) |
+| **AI Phishing Check** | **AI Fishing tekshiruvi** | ✅ 🛰️ NEW (1.2.0) |
+| **Statistics UI** | **Statistika UI** | ✅ 100% |
+| **Uzbek/Japanese Support** | **O'zbek/Yapon tilini qo'llab-quvvatlash** | ✅ 🆕 Update |
 
-✅ 完了した機能: 28/33
-🔄 進行中: 0
-⬜ 未着手: 5
+---
+
+## 🚀 Setup / O'rnatish tartibi
+
+### 1. MongoDB (Local)
+🇯🇵 コンテナを削除して、認証なしで新しく起動することをお勧めします。
+🇺🇿 Konteynerni o'chirib, autentifikatsiyasiz yangidan ishga tushirish tavsiya etiladi.
+```powershell
+docker stop ssmail_mongodb
+docker rm ssmail_mongodb
+docker run -d --name smail_mongodb -p 27017:27017 mongo:latest
 ```
 
-### カテゴリ別進捗
-
-| カテゴリ | 進捗 | 完了/全体 |
-|----------|------|-----------|
-| 認証機能 | ██████████ 100% | 7/7 |
-| メール機能 | ██████████ 100% | 8/8 |
-| セキュリティ | ██████████ 100% | 6/6 |
-| UI/UX | ██████████ 100% | 6/6 |
-| 統計機能 | ██████████ 100% | 2/2 |
-| 追加機能 | ░░░░░░░░░░ 0% | 0/4 |
-
----
-
-## 🔮 今後の開発予定
-
-### Phase 2: 追加機能（優先度: 高）
-
-| 機能 | 状態 | 予定完了日 |
-|------|------|-----------|
-| SMTP統合（外部メール送受信） | ⬜ 未着手 | TBD |
-| プッシュ通知 | ⬜ 未着手 | TBD |
-| メール暗号化 (E2E) | ⬜ 未着手 | TBD |
-
-### Phase 3: 拡張機能（優先度: 中）
-
-| 機能 | 状態 | 予定完了日 |
-|------|------|-----------|
-| ファイル添付 | ⬜ 未着手 | TBD |
-| リッチテキストエディタ | ⬜ 未着手 | TBD |
-| ダークモード | ⬜ 未着手 | TBD |
-
----
-
-## 🚀 セットアップ手順
-
-### 前提条件
-
-- Node.js v14以上
-- Python 3.8以上
-- MongoDB
-- MySQL
-
-### クイックスタート
-
-```bash
-# 1. フィッシング検知サービス起動
-cd backend\phishing-detector
-.\start.bat
-# サービスが http://localhost:5000 で起動
-
-# 2. バックエンド起動
+### 2. Backend (Node.js)
+```powershell
 cd backend
 npm install
 npm start
-# サーバーが http://localhost:3002 で起動
+```
 
-# 3. フロントエンド起動
+### 3. Phishing Detector (Python)
+```powershell
+cd backend/phishing-detector
+.\start.bat
+```
+
+### 4. Frontend (Mobile)
+```powershell
 npm install
 npm start
 ```
 
 ---
 
-## 🛠️ 技術スタック
+## 🛠️ API & DB Config (.env)
+🇯🇵 **重要**: データベース名は `ssmail` に統一されました。
+🇺🇿 **Muhim**: Ma'lumotlar bazasi nomi `ssmail` ga o'zgartirildi.
 
-### フロントエンド
-- React Native
-- React Navigation 7.x
-- Animated API
-
-### バックエンド
-- Node.js + Express (port 3002)
-- JWT認証
-- bcrypt
-
-### フィッシング検知
-- Python + Flask (port 5000)
-- JPCERT/CC連携 (9,000+ URLs)
-- Levenshtein距離による類似URL検出
-
-### データベース
-- MySQL (ユーザー管理)
-- MongoDB (メールデータ)
+- **MySQL DB Name**: `ssmail`
+- **MongoDB URL**: `mongodb://localhost:27017/ssmail`
+- **Backend Port**: `3002`
+- **AI Service Port**: `5000`
 
 ---
 
-## 📁 関連ドキュメント
-
-| ドキュメント | 説明 |
-|-------------|------|
-| [CLAUDE.md](./CLAUDE.md) | AI向け技術仕様書 |
-| [phishing-detector/README.md](./backend/phishing-detector/README.md) | フィッシング検知サービス |
-| [docs/MONGODB_SETUP.md](./docs/MONGODB_SETUP.md) | MongoDB セットアップ |
-
----
-
-## 👨‍💻 著者
-
-**Sakir Izu**
-- GitHub: [@sakirizu](https://github.com/sakirizu)
-
-## 📄 ライセンス
-
-MIT License
-
----
-
-## 📝 更新履歴
-
-| 日付 | バージョン | 変更内容 |
-|------|-----------|---------|
-| 2025-12-18 | 1.2.0 | 全エラーメッセージの日本語化、APIポート統一、データベース設定修正 |
-| 2025-12-18 | 1.1.0 | フィッシング検知AI実装、JPCERT/CC連携、UI警告表示 |
-| 2025-12-18 | 1.0.0 | 要件定義書を初版作成 |
-
----
-
-> 💡 **ヒント**: 「更新」と入力すると、このドキュメントとCLAUDE.mdが自動的に最新の状態に更新されます。
+## 📝 Authors / Mualliflar
+- **Sakir Izu** (@sakirizu)
+- **Collaborator** (@kosei)
