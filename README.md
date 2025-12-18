@@ -1,136 +1,136 @@
-# 📧 Mail Server - Japanese UI
+# 📧 メールサーバー - 日本語 UI
 
-Beautiful mail application with Japanese interface, modern design, and elegant 80% compose modal with blur effects and spring animations.
+美しい日本語インターフェース、モダンなデザイン、そしてブラーエフェクトとスプリングアニメーションを備えたエレガントな80%画面カバー率の作成モーダルを搭載したメールアプリケーションです。
 
-## ✨ Features
+## ✨ 特徴
 
-- 🇯🇵 **Full Japanese UI** - Complete Japanese language interface
-- 📨 **Email Management** - Send, receive, and organize emails
-- ✏️ **Beautiful Compose Modal** - 80% coverage modal with blur backdrop and smooth spring animations
-- 📥 **Folder Management** - Inbox, Sent, Drafts, Trash, Spam
-- 🎨 **Modern Blue Design** - iOS-style blue (#007AFF) theme with gradients
-- 📱 **Responsive Layout** - Works on mobile and web
-- 🔐 **Secure Authentication** - Login/Register with JWT tokens
-- 💾 **Hybrid Storage** - MongoDB + File system storage
+- 🇯🇵 **完全日本語 UI** - 全てのインターフェースが日本語に対応
+- 📨 **メール管理** - メールの送信、受信、整理が可能
+- ✏️ **美しい作成モーダル** - ブラー背景と滑らかなスプリングアニメーションを備えた8割表示のモーダル
+- 📥 **フォルダ管理** - 受信トレイ、送信済み、下書き、ゴミ箱、迷惑メール
+- 🎨 **モダンなブルーデザイン** - iOSスタイルのブルー（#007AFF）とグラデーションを採用したテーマ
+- 📱 **レスポンシブレイアウト** - モバイルとウェブの両方に対応
+- 🔐 **セキュアな認証** - JWTトークンによるログイン/新規登録
+- 💾 **ハイブリッドストレージ** - MongoDB + ファイルシステムによるストレージ
 
-## 🎨 Design Highlights
+## 🎨 デザインのハイライト
 
-### Compose Modal
-- **80% Screen Coverage** - Centered with 15% margins (L/R) and 10% margins (T/B)
-- **Beautiful Blue Header** - Gradient blue header matching iOS style
-- **Glass Morphism** - White transparent backdrop (0.2 opacity) with 20px blur
-- **Smooth Spring Animations** - Natural feel (tension: 80, friction: 6)
-- **Borderless Inputs** - Clean shadow-based design with 16px border radius
-- **Labels Above Inputs** - Better UX with 70% width inputs
-- **Blue Send Button** - Gradient blue button (65% width) with shadow glow
-- **Rounded Corners** - 24px border radius for premium feel
+### 作成モーダル
+- **80% の画面カバー率** - 左右に15%、上下に10%のマージンを持たせた中央配置
+- **美しいブルーのヘッダー** - iOSスタイルに合わせたグラデーションブルーのヘッダー
+- **グラスモーフィズム** - 20pxのブラーがかかった白の透過背景（不透明度0.2）
+- **滑らかなスプリングアニメーション** - 自然な操作感（tension: 80, friction: 6）
+- **ボーダーレス入力** - 16pxの角丸と影を基調としたクリーンなデザイン
+- **入力欄の上のラベル** - 70%幅の入力欄で見やすいレイアウト
+- **ブルーの送信ボタン** - グラデーションブルー（65%幅）と光る影のエフェクト
+- **丸みを帯びた角** - プレミアム感を演出する24pxの角丸
 
-### UI Features
-- No borders on inputs (borderWidth: 0)
-- Smooth transitions and animations
-- Japanese labels: 宛先 (To), 件名 (Subject), 本文 (Body)
-- Clean white close button with icon
-- Draft save button in header
-- Professional typography and spacing
+### UI の特徴
+- 入力欄の境界線を排除 (borderWidth: 0)
+- 滑らかな遷移とアニメーション
+- 日本語ラベル: 宛先, 件名, 本文
+- アイコン付きのクリーンな白い閉じるボタン
+- ヘッダーに配置された下書き保存ボタン
+- プロフェッショナルなタイポグラフィとスペーシング
 
-## 🚀 Installation
+## 🚀 インストール方法
 
-### Prerequisites
-- Node.js (v14 or higher)
-- MongoDB (running locally or remote)
-- npm or yarn
+### 前提条件
+- Node.js (v14 以上)
+- MongoDB (ローカルまたはリモートで実行中)
+- npm または yarn
 
-### Frontend Setup
+### フロントエンドのセットアップ
 
 ```bash
-# Install dependencies
+# 依存関係のインストール
 npm install
 
-# Start the app
+# アプリの起動
 npm start
 ```
 
-### Backend Setup
+### バックエンドのセットアップ
 
 ```bash
-# Navigate to backend
+# バックエンドディレクトリへ移動
 cd backend
 
-# Install dependencies
+# 依存関係のインストール
 npm install
 
-# Start the server
+# サーバーの起動
 npm start
 ```
 
-The backend runs on `http://localhost:3001`
+バックエンドは `http://localhost:3001` で動作します。
 
-## 🛠️ Technologies
+## 🛠️ 使用技術
 
-### Frontend
+### フロントエンド
 - React Native
 - React Navigation 7.x
-- Animated API (Spring animations)
+- Animated API (スプリングアニメーション)
 - AsyncStorage
-- Custom hooks (useAuth)
-- Platform-specific styling (Web blur effects)
+- カスタムフック (useAuth)
+- プラットフォーム固有のスタイリング (ウェブ版ブラーエフェクト)
 
-### Backend
+### バックエンド
 - Node.js
 - Express
 - MongoDB/Mongoose
-- JWT Authentication
+- JWT 認証
 - Bcrypt
-- Hybrid Mail Service (MongoDB + File system)
+- ハイブリッドメールサービス (MongoDB + ファイルシステム)
 
-## 📱 Screens
+## 📱 画面構成
 
-1. **Login Screen** (ログイン画面) - User authentication
-2. **Register Screen** (登録画面) - New user registration
-3. **Inbox** (受信トレイ) - Received emails
-4. **Sent** (送信済み) - Sent emails
-5. **Drafts** (下書き) - Draft emails
-6. **Compose Modal** (新しいメッセージ) - Beautiful 80% modal
-7. **Mail Detail** (メール詳細) - Email details view
-8. **Trash** (ゴミ箱) - Deleted emails
-9. **Spam** (迷惑メール) - Spam folder
+1. **ログイン画面** - ユーザー認証
+2. **登録画面** - 新規ユーザー登録
+3. **受信トレイ** - 受信したメール一覧
+4. **送信済み** - 送信したメール一覧
+5. **下書き** - 保存した下書き一覧
+6. **作成モーダル** - 美しい80%表示のモーダル
+7. **メール詳細** - メールの詳細表示
+8. **ゴミ箱** - 削除したメール
+9. **迷惑メール** - 迷惑メールフォルダ
 
-## 🎯 API Endpoints
+## 🎯 API エンドポイント
 
 ```
-POST   /api/auth/login          - User login
-POST   /api/auth/register       - User registration
-GET    /api/mails/:folder       - Get mails by folder
-GET    /api/mails/detail/:id    - Get mail details
-POST   /api/mails/send          - Send new mail
-POST   /api/mails/draft         - Save draft
-DELETE /api/mails/:id           - Delete mail
-PUT    /api/mails/:id/read      - Mark as read
+POST   /api/auth/login          - ユーザーログイン
+POST   /api/auth/register       - ユーザー登録
+GET    /api/mails/:folder       - フォルダごとのメール取得
+GET    /api/mails/detail/:id    - メールの詳細取得
+POST   /api/mails/send          - 新規メール送信
+POST   /api/mails/draft         - 下書き保存
+DELETE /api/mails/:id           - メールの削除
+PUT    /api/mails/:id/read      - 既読にする
 ```
 
-## 🎨 Compose Modal Features
+## 🎨 作成モーダルの特徴
 
 ```javascript
-// Beautiful animations
-- Slide-up animation: translateY from screenHeight to 0
-- Scale animation: from 0.9 to 1.0
-- Backdrop fade: opacity from 0 to 1
-- Spring physics: tension 80, friction 6
-- Duration: 250ms for smooth feel
+// 美しいアニメーション
+- スライドアップ: translateY を screenHeight から 0 へ
+- スケールアニメーション: 0.9 から 1.0 へ
+- 背景のフェード: 不透明度 0 から 1 へ
+- スプリング物理学: tension 80, friction 6
+- 所要時間: 250ms で滑らかな質感
 
-// Styling details
-- Modal size: 80% coverage (70% width, 80% height)
-- Border radius: 24px for all corners
-- Header: Blue gradient (#007AFF to #0056D3)
-- Backdrop: rgba(255,255,255,0.2) with 20px blur
-- Inputs: 70% width, 16px radius, no borders
-- Send button: 65% width, 25px radius, blue gradient
-- Shadows: Multiple layers for depth
+// スタイリング詳細
+- モーダルサイズ: 80% カバー (幅 70%, 高さ 80%)
+- 角丸: 全ての角に 24px
+- ヘッダー: ブルーグラデーション (#007AFF から #0056D3)
+- 背景: rgba(255,255,255,0.2) + 20px ブラー
+- 入力欄: 70% 幅, 16px 角丸, 境界線なし
+- 送信ボタン: 65% 幅, 25px 角丸, ブルーグラデーション
+- シャドウ: 奥行きを出すための多層レイヤー
 ```
 
-## 🔧 Configuration
+## 🔧 設定
 
-Create a `.env` file in the backend directory:
+backend ディレクトリに `.env` ファイルを作成してください：
 
 ```env
 PORT=3001
@@ -138,14 +138,14 @@ MONGODB_URI=mongodb://localhost:27017/maildb
 JWT_SECRET=your-secret-key-here
 ```
 
-## 📂 Project Structure
+## 📂 プロジェクト構造
 
 ```
 D/
 ├── src/
 │   ├── components/
-│   │   ├── ComposeModal.js    # 80% modal with blur effects
-│   │   ├── Sidebar.js          # Navigation sidebar
+│   │   ├── ComposeModal.js    # ブラーエフェクト付きの80%モーダル
+│   │   ├── Sidebar.js          # ナビゲーションサイドバー
 │   │   └── ...
 │   ├── screens/
 │   │   ├── InboxScreen.js
@@ -153,65 +153,51 @@ D/
 │   │   ├── LoginScreen.js
 │   │   └── ...
 │   ├── context/
-│   │   └── AuthContext.js      # Authentication context
+│   │   └── AuthContext.js      # 認証コンテキスト
 │   └── styles/
-│       └── theme.js            # Color theme
+│       └── theme.js            # カラーテーマ
 ├── backend/
-│   ├── server.js               # Express server
-│   ├── hybridMailService.js    # Hybrid mail service
-│   ├── mongoMailService.js     # MongoDB service
-│   └── mailService.js          # File system service
-├── App.js                      # Main app component
+│   ├── server.js               # Express サーバー
+│   ├── hybridMailService.js    # ハイブリッドメールサービス
+│   ├── mongoMailService.js     # MongoDB サービス
+│   └── mailService.js          # ファイルシステムサービス
+├── App.js                      # メメインアプリコンポーネント
 ├── package.json
 └── README.md
 ```
 
-## 👨‍💻 Author
+## 👨‍💻 著者
 
 **Sakir Izu**
 - GitHub: [@sakirizu](https://github.com/sakirizu)
-- Repository: [Mail-server](https://github.com/sakirizu/Mail-server)
+- リポジトリ: [Mail-server](https://github.com/sakirizu/Mail-server)
 
-## 📄 License
+## 📄 ライセンス
 
-This project is open source and available under the MIT License.
+このプロジェクトはオープンソースであり、MITライセンスの下で公開されています。
 
-## 🙏 Acknowledgments
+## 🙏 謝辞
 
-- Beautiful Japanese UI design with full Japanese language support
-- Modern glass morphism and blur effects (backdrop-filter)
-- Smooth spring animations with natural physics
-- iOS-style blue theme (#007AFF) with gradients
-- Clean, borderless input design with shadows
-- 80% modal coverage for better user experience
-- Platform-specific optimizations (web blur, native shadows)
+- 完全日本語対応の美しい日本語UIデザイン
+- モダンなグラスモーフィズムとブラーエフェクト (backdrop-filter)
+- 自然な物理法則に基づいた滑らかなスプリングアニメーション
+- グラデーションを用いたiOSスタイルのブルーテーマ (#007AFF)
+- 影を活用したクリーンでボーダーレスな入力欄デザイン
+- ユーザー体験を向上させる80%のモーダルカバー率
+- プラットフォーム固有の最適化 (ウェブ版ブラー、ネイティブ版シャドウ)
 
-## 🐛 Known Issues
+## 🐛 既知の問題
 
-None at the moment. Feel free to report any issues on GitHub!
+現在のところありません。問題を見つけた場合はGitHubで報告してください！
 
-## 🔮 Future Enhancements
+## 🔮 今後の改善案
 
-- [ ] File attachments support
-- [ ] Rich text editor for email body
-- [ ] Email templates
-- [ ] Dark mode support
-- [ ] Push notifications
-- [ ] Advanced search functionality
-- [ ] Contact management
-- [ ] Email signatures
-- [ ] Multiple account support
-
-## 📸 Screenshots
-
-### Compose Modal
-- Beautiful 80% modal with blue gradient header
-- Glass morphism backdrop with blur effect
-- Clean inputs with labels above
-- iOS-style blue send button
-
-### Features
-- Full Japanese interface
-- Smooth spring animations
-- Modern design with rounded corners
-- Professional shadows and depth
+- [ ] ファイル添付機能のサポート
+- [ ] メール本文のリッチテキストエディタ
+- [ ] メールテンプレート
+- [ ] ダークモード対応
+- [ ] プッシュ通知
+- [ ] 高度な検索機能
+- [ ] 連絡先管理
+- [ ] メール署名
+- [ ] 複数アカウント対応
