@@ -4,11 +4,14 @@ const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
-const fetch = require('node-fetch');
-const TwoFactorAuth = require('./twoFactorAuth');
-const MailService = require('./mailService');
-const MongoMailService = require('./mongoMailService');
-const HybridMailService = require('./hybridMailService');
+const TwoFactorAuth = require('./services/twoFactorAuth');
+const MailService = require('./services/mailService');
+const MongoMailService = require('./services/mongoMailService');
+const HybridMailService = require('./services/hybridMailService');
+const http = require('http');
+
+// Phishing Detection Service URL
+const PHISHING_DETECTOR_URL = process.env.PHISHING_DETECTOR_URL || 'http://localhost:5000';
 
 const app = express();
 app.use(express.json());
@@ -17,6 +20,7 @@ app.use(cors());
 // MySQL for user data
 const db = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
+  port: process.env.DB_PORT || 3306,
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASS || '',
   database: process.env.DB_NAME || 'ssmail',
@@ -28,63 +32,6 @@ const mailService = new MailService();
 const mongoMailService = new MongoMailService();
 const hybridMailService = new HybridMailService(db);
 
-// Phishing Detection Service Configuration
-const PHISHING_DETECTOR_URL = process.env.PHISHING_DETECTOR_URL || 'http://localhost:5000';
-const ENABLE_PHISHING_DETECTION = process.env.ENABLE_PHISHING_DETECTION !== 'false'; // Enabled by default
-
-// Phishing Detection Function
-async function checkEmailForPhishing(emailData) {
-  if (!ENABLE_PHISHING_DETECTION) {
-    console.log('⚠️  Phishing detection disabled');
-    return { is_phishing: false, confidence: 0, reasons: [] };
-  }
-
-  console.log(`🔍 Sending to phishing detector: ${PHISHING_DETECTOR_URL}/check-email`);
-  console.log('   Email data:', { 
-    from: emailData.from, 
-    subject: emailData.subject?.substring(0, 50),
-    bodyLength: emailData.body?.length 
-  });
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-    const response = await fetch(`${PHISHING_DETECTOR_URL}/check-email`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from: emailData.from,
-        subject: emailData.subject,
-        body: emailData.body
-      }),
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-
-    if (response.ok) {
-      const result = await response.json();
-      console.log('✅ Phishing check result:', {
-        is_phishing: result.is_phishing,
-        confidence: result.confidence,
-        score: result.score,
-        reasons: result.reasons?.slice(0, 3)
-      });
-      return result;
-    } else {
-      const errorText = await response.text();
-      console.error('❌ Phishing detection service error:', response.status, errorText);
-      return { is_phishing: false, confidence: 0, reasons: ['Service unavailable'] };
-    }
-  } catch (error) {
-    console.error('❌ Phishing detection error:', error.message);
-    console.error('   Make sure Python service is running on', PHISHING_DETECTOR_URL);
-    // Default to safe on error
-    return { is_phishing: false, confidence: 0, reasons: ['Service error: ' + error.message] };
-  }
-}
-
 // Initialize connections
 async function initializeServices() {
   try {
@@ -93,55 +40,88 @@ async function initializeServices() {
     console.log('✅ MySQL connected successfully (users only)');
 
     // Connect to MongoDB (email storage uchun)
-    const mongoConnected = await mongoMailService.connect();
-    if (!mongoConnected) {
-      console.error('⚠️  MongoDB connection failed - email features may not work');
-      console.log('💡 Please make sure MongoDB is running on localhost:27017');
-      console.log('   You can start MongoDB with: mongod --dbpath=/data/db');
-    } else {
-      console.log('✅ MongoDB connected - email storage ready');
-      
-      // Test if we can query mails
-      try {
-        const testResult = await mongoMailService.getMailsByUser('test@ssm.com', { 
-          folder: 'inbox', 
-          limit: 1 
-        });
-        if (testResult.success) {
-          console.log('✅ MongoDB query test successful');
-        } else {
-          console.log('⚠️  MongoDB query test failed:', testResult.error);
-        }
-      } catch (testError) {
-        console.log('⚠️  MongoDB query test error:', testError.message);
-      }
-    }
-    
-    // Test phishing detection service
-    console.log('🔌 Testing phishing detection service...');
-    try {
-      const healthResponse = await fetch(`${PHISHING_DETECTOR_URL}/health`);
-      if (healthResponse.ok) {
-        const healthData = await healthResponse.json();
-        console.log('✅ Phishing detector connected:', healthData.phishing_urls_loaded, 'URLs loaded');
-      } else {
-        console.log('⚠️  Phishing detector not responding - emails will be delivered to inbox by default');
-      }
-    } catch (phishError) {
-      console.log('⚠️  Phishing detector not available:', phishError.message);
-      console.log('   Start it with: cd backend/phishing-detector && python phishing_detector.py');
-    }
-    
+    await mongoMailService.connect();
+
     // Test mail connection
     await mailService.testConnection();
-    
-    console.log('🚀 All services initialized');
+
+    console.log('🚀 All services initialized successfully');
   } catch (error) {
     console.error('❌ Service initialization failed:', error);
   }
 }
 
 initializeServices();
+
+// ================== Phishing Detection ==================
+
+/**
+ * Check email for phishing using the Python detection service
+ * @param {Object} emailData - {from, subject, body}
+ * @returns {Promise<Object>} - {is_phishing, risk_score, risk_level, reasons, recommendation}
+ */
+async function checkPhishing(emailData) {
+  return new Promise((resolve) => {
+    try {
+      const postData = JSON.stringify({
+        from: emailData.from || '',
+        subject: emailData.subject || '',
+        body: emailData.body || ''
+      });
+
+      const url = new URL(PHISHING_DETECTOR_URL);
+      const options = {
+        hostname: url.hostname,
+        port: url.port || 5000,
+        path: '/check-email',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(postData)
+        },
+        timeout: 5000
+      };
+
+      const req = http.request(options, (res) => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+          try {
+            const result = JSON.parse(data);
+            resolve({
+              is_phishing: result.is_phishing || false,
+              risk_score: result.risk_score || 0,
+              risk_level: result.risk_level || 'SAFE',
+              risk_level_display: result.risk_level_display || '🟢 Safe',
+              reasons: result.reasons || [],
+              recommendation: result.recommendation || 'inbox'
+            });
+          } catch (e) {
+            console.error('Phishing check parse error:', e);
+            resolve({ is_phishing: false, risk_score: 0, risk_level: 'SAFE', reasons: [], recommendation: 'inbox' });
+          }
+        });
+      });
+
+      req.on('error', (e) => {
+        console.error('Phishing check request error:', e.message);
+        resolve({ is_phishing: false, risk_score: 0, risk_level: 'SAFE', reasons: [], recommendation: 'inbox' });
+      });
+
+      req.on('timeout', () => {
+        console.error('Phishing check timeout');
+        req.destroy();
+        resolve({ is_phishing: false, risk_score: 0, risk_level: 'SAFE', reasons: [], recommendation: 'inbox' });
+      });
+
+      req.write(postData);
+      req.end();
+    } catch (error) {
+      console.error('Phishing check error:', error);
+      resolve({ is_phishing: false, risk_score: 0, risk_level: 'SAFE', reasons: [], recommendation: 'inbox' });
+    }
+  });
+}
 
 // Signup (multi-step, auto @ssm.com email with 2FA setup)
 app.post('/api/auth/signup', async (req, res) => {
@@ -153,21 +133,21 @@ app.post('/api/auth/signup', async (req, res) => {
     if (rows.length > 0) return res.status(409).json({ error: 'Foydalanuvchi allaqachon mavjud' });
     const hash = await bcrypt.hash(password, 10);
     const [result] = await db.query('INSERT INTO users (name, username, email, password) VALUES (?, ?, ?, ?)', [name, username, email, hash]);
-    
+
     const userId = result.insertId;
-    
+
     // Initialize 2FA settings
     await db.query('INSERT INTO user_2fa_settings (user_id, require_2fa) VALUES (?, TRUE)', [userId]);
-    
+
     // Generate TOTP secret automatically
     const totpSetup = await twoFA.generateTOTPSecret(userId, username);
-    
+
     // Generate backup codes
     const backupCodes = await twoFA.generateBackupCodes(userId);
-    
-    res.json({ 
-      success: true, 
-      email, 
+
+    res.json({
+      success: true,
+      email,
       userId,
       twoFASetup: {
         qrCode: totpSetup.qrCode,
@@ -186,7 +166,7 @@ app.post('/api/auth/signup', async (req, res) => {
 app.post('/api/auth/signup/confirm-2fa', async (req, res) => {
   const { userId, totpCode } = req.body;
   if (!userId || !totpCode) return res.status(400).json({ error: 'User ID va TOTP kod kerak' });
-  
+
   try {
     // Enable TOTP
     const result = await twoFA.enableTOTP(userId, totpCode);
@@ -195,10 +175,10 @@ app.post('/api/auth/signup/confirm-2fa', async (req, res) => {
       const [rows] = await db.query('SELECT * FROM users WHERE id = ?', [userId]);
       const user = rows[0];
       const token = jwt.sign({ id: user.id, username: user.username, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-      
-      res.json({ 
-        success: true, 
-        token, 
+
+      res.json({
+        success: true,
+        token,
         user: { id: user.id, username: user.username, email: user.email, name: user.name },
         message: '2FA muvaffaqiyatli sozlandi!'
       });
@@ -224,13 +204,13 @@ app.post('/api/auth/login', async (req, res) => {
 
     // Check if 2FA is required (always required for new system)
     const twoFAStatus = await twoFA.get2FAStatus(user.id);
-    
+
     if (twoFAStatus.totpEnabled || twoFAStatus.require2FA) {
       // Generate 2FA challenge token (temporary token for 2FA verification)
       const tempToken = jwt.sign({ id: user.id, temp: true }, JWT_SECRET, { expiresIn: '10m' });
-      
-      res.json({ 
-        requires2FA: true, 
+
+      res.json({
+        requires2FA: true,
         tempToken,
         availableMethods: {
           totp: twoFAStatus.totpEnabled,
@@ -240,8 +220,8 @@ app.post('/api/auth/login', async (req, res) => {
     } else {
       // This shouldn't happen in new system, but fallback
       const token = jwt.sign({ id: user.id, username: user.username, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-      res.json({ 
-        token, 
+      res.json({
+        token,
         user: { id: user.id, username: user.username, email: user.email, name: user.name },
         warning: '2FA sozlanmagan! Iltimos profilingizda 2FA ni yoqing.'
       });
@@ -255,15 +235,15 @@ app.post('/api/auth/login', async (req, res) => {
 // Step 2: Verify 2FA (TOTP, WebAuthn, or Backup code)
 app.post('/api/auth/verify-2fa', async (req, res) => {
   const { tempToken, method, code, webauthnResponse, sessionToken } = req.body;
-  
+
   try {
     // Verify temp token
     const decoded = jwt.verify(tempToken, JWT_SECRET);
     if (!decoded.temp) return res.status(401).json({ error: 'Invalid token' });
-    
+
     const userId = decoded.id;
     let verified = false;
-    
+
     switch (method) {
       case 'totp':
         if (!code) return res.status(400).json({ error: 'TOTP code required' });
@@ -271,25 +251,25 @@ app.post('/api/auth/verify-2fa', async (req, res) => {
         verified = totpResult.verified;
         if (!verified) return res.status(401).json({ error: totpResult.error || 'Invalid TOTP code' });
         break;
-        
+
       case 'webauthn':
         if (!webauthnResponse || !sessionToken) return res.status(400).json({ error: 'WebAuthn response required' });
         const webauthnResult = await twoFA.verifyWebAuthnAuthentication(userId, sessionToken, webauthnResponse);
         verified = webauthnResult.verified;
         if (!verified) return res.status(401).json({ error: webauthnResult.error || 'WebAuthn verification failed' });
         break;
-        
+
       case 'backup':
         if (!code) return res.status(400).json({ error: 'Backup code required' });
         const backupResult = await twoFA.verifyBackupCode(userId, code);
         verified = backupResult.verified;
         if (!verified) return res.status(401).json({ error: backupResult.error || 'Invalid backup code' });
         break;
-        
+
       default:
         return res.status(400).json({ error: 'Invalid 2FA method' });
     }
-    
+
     if (verified) {
       // Get user data and generate full token
       const [rows] = await db.query('SELECT * FROM users WHERE id = ?', [userId]);
@@ -320,16 +300,16 @@ app.get('/api/auth/verify', auth, async (req, res) => {
   try {
     const [rows] = await db.query('SELECT id, name, username, email FROM users WHERE id = ?', [req.user.id]);
     if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
-    
+
     const user = rows[0];
-    res.json({ 
-      valid: true, 
-      user: { 
-        id: user.id, 
-        username: user.username, 
-        email: user.email, 
-        name: user.name 
-      } 
+    res.json({
+      valid: true,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        name: user.name
+      }
     });
   } catch (error) {
     console.error('Token verification error:', error);
@@ -369,7 +349,7 @@ app.get('/mail/inbox', auth, async (req, res) => {
       limit: 50,
       skip: 0
     });
-    
+
     if (result.success) {
       // Transform for simple response
       const emails = result.emails.map(email => ({
@@ -414,7 +394,7 @@ app.post('/api/2fa/totp/generate', auth, async (req, res) => {
 app.post('/api/2fa/totp/enable', auth, async (req, res) => {
   const { token } = req.body;
   if (!token) return res.status(400).json({ error: 'TOTP token required' });
-  
+
   try {
     const result = await twoFA.enableTOTP(req.user.id, token);
     if (result.success) {
@@ -431,13 +411,13 @@ app.post('/api/2fa/totp/enable', auth, async (req, res) => {
 app.post('/api/2fa/totp/disable', auth, async (req, res) => {
   const { password } = req.body;
   if (!password) return res.status(400).json({ error: 'Password required' });
-  
+
   try {
     // Verify password
     const [rows] = await db.query('SELECT password FROM users WHERE id = ?', [req.user.id]);
     const match = await bcrypt.compare(password, rows[0].password);
     if (!match) return res.status(401).json({ error: 'Invalid password' });
-    
+
     await db.query('UPDATE user_totp SET enabled = FALSE WHERE user_id = ?', [req.user.id]);
     await db.query('UPDATE user_2fa_settings SET totp_enabled = FALSE WHERE user_id = ?', [req.user.id]);
     res.json({ success: true });
@@ -460,7 +440,7 @@ app.post('/api/2fa/webauthn/register/begin', auth, async (req, res) => {
 app.post('/api/2fa/webauthn/register/complete', auth, async (req, res) => {
   const { sessionToken, response, keyName } = req.body;
   if (!sessionToken || !response) return res.status(400).json({ error: 'Session token and response required' });
-  
+
   try {
     const result = await twoFA.verifyWebAuthnRegistration(req.user.id, sessionToken, response, keyName);
     if (result.verified) {
@@ -477,11 +457,11 @@ app.post('/api/2fa/webauthn/register/complete', auth, async (req, res) => {
 app.post('/api/2fa/webauthn/auth/begin', async (req, res) => {
   const { tempToken } = req.body;
   if (!tempToken) return res.status(400).json({ error: 'Temp token required' });
-  
+
   try {
     const decoded = jwt.verify(tempToken, JWT_SECRET);
     if (!decoded.temp) return res.status(401).json({ error: 'Invalid token' });
-    
+
     const result = await twoFA.generateWebAuthnAuthentication(decoded.id);
     res.json(result);
   } catch (e) {
@@ -507,21 +487,21 @@ app.delete('/api/2fa/webauthn/keys/:keyId', auth, async (req, res) => {
   const { keyId } = req.params;
   const { password } = req.body;
   if (!password) return res.status(400).json({ error: 'Password required' });
-  
+
   try {
     // Verify password
     const [userRows] = await db.query('SELECT password FROM users WHERE id = ?', [req.user.id]);
     const match = await bcrypt.compare(password, userRows[0].password);
     if (!match) return res.status(401).json({ error: 'Invalid password' });
-    
+
     await db.query('DELETE FROM user_webauthn WHERE id = ? AND user_id = ?', [keyId, req.user.id]);
-    
+
     // Check if any WebAuthn keys remain
     const [remaining] = await db.query('SELECT COUNT(*) as count FROM user_webauthn WHERE user_id = ?', [req.user.id]);
     if (remaining[0].count === 0) {
       await db.query('UPDATE user_2fa_settings SET webauthn_enabled = FALSE WHERE user_id = ?', [req.user.id]);
     }
-    
+
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: 'Failed to remove key' });
@@ -532,16 +512,16 @@ app.delete('/api/2fa/webauthn/keys/:keyId', auth, async (req, res) => {
 app.post('/api/2fa/backup-codes/generate', auth, async (req, res) => {
   const { password } = req.body;
   if (!password) return res.status(400).json({ error: 'Password required' });
-  
+
   try {
     // Verify password
     const [rows] = await db.query('SELECT password FROM users WHERE id = ?', [req.user.id]);
     const match = await bcrypt.compare(password, rows[0].password);
     if (!match) return res.status(401).json({ error: 'Invalid password' });
-    
+
     // Delete old backup codes
     await db.query('DELETE FROM user_backup_codes WHERE user_id = ?', [req.user.id]);
-    
+
     // Generate new codes
     const codes = await twoFA.generateBackupCodes(req.user.id);
     res.json({ backupCodes: codes });
@@ -554,13 +534,13 @@ app.post('/api/2fa/backup-codes/generate', auth, async (req, res) => {
 app.post('/api/2fa/require', auth, async (req, res) => {
   const { require2FA, password } = req.body;
   if (!password) return res.status(400).json({ error: 'Password required' });
-  
+
   try {
     // Verify password
     const [rows] = await db.query('SELECT password FROM users WHERE id = ?', [req.user.id]);
     const match = await bcrypt.compare(password, rows[0].password);
     if (!match) return res.status(401).json({ error: 'Invalid password' });
-    
+
     await db.query(
       'UPDATE user_2fa_settings SET require_2fa = ? WHERE user_id = ?',
       [require2FA, req.user.id]
@@ -577,8 +557,8 @@ app.post('/api/auth/account/delete/initiate', auth, async (req, res) => {
     // Check if user has 2FA enabled
     const status = await twoFA.get2FAStatus(req.user.id);
     if (!status.require2FA) {
-      return res.status(400).json({ 
-        error: '2FA sozlanmagan. Hisobni o\'chirish uchun 2FA yoqilgan bo\'lishi kerak.' 
+      return res.status(400).json({
+        error: '2FA sozlanmagan. Hisobni o\'chirish uchun 2FA yoqilgan bo\'lishi kerak.'
       });
     }
 
@@ -594,11 +574,11 @@ app.post('/api/auth/account/delete/initiate', auth, async (req, res) => {
 app.post('/api/auth/account/delete/confirm', auth, async (req, res) => {
   try {
     const { totpCode, backupCode, challengeToken } = req.body;
-    
+
     if (!challengeToken) {
       return res.status(400).json({ error: 'Challenge token kerak' });
     }
-    
+
     if (!totpCode && !backupCode) {
       return res.status(400).json({ error: '2FA kod yoki backup kod kerak' });
     }
@@ -618,10 +598,10 @@ app.post('/api/auth/account/delete/confirm', auth, async (req, res) => {
 
     // Delete account with 2FA verification
     const result = await twoFA.deleteUserAccount(req.user.id, totpCode, backupCode);
-    
-    res.json({ 
-      success: true, 
-      message: 'Hisob muvaffaqiyatli o\'chirildi' 
+
+    res.json({
+      success: true,
+      message: 'Hisob muvaffaqiyatli o\'chirildi'
     });
   } catch (error) {
     console.error('Account deletion confirmation error:', error);
@@ -632,11 +612,11 @@ app.post('/api/auth/account/delete/confirm', auth, async (req, res) => {
 // Logout endpoint with 2FA verification
 app.post('/api/auth/logout', auth, async (req, res) => {
   const { totpCode, backupCode, method } = req.body;
-  
+
   try {
     // Verify 2FA before logout
     let verified = false;
-    
+
     switch (method) {
       case 'totp':
         if (!totpCode) return res.status(400).json({ error: 'TOTP code required' });
@@ -644,31 +624,90 @@ app.post('/api/auth/logout', auth, async (req, res) => {
         verified = totpResult.verified;
         if (!verified) return res.status(401).json({ error: totpResult.error || 'Invalid TOTP code' });
         break;
-        
+
       case 'backup':
         if (!backupCode) return res.status(400).json({ error: 'Backup code required' });
         const backupResult = await twoFA.verifyBackupCode(req.user.id, backupCode);
         verified = backupResult.verified;
         if (!verified) return res.status(401).json({ error: backupResult.error || 'Invalid backup code' });
         break;
-        
+
       default:
         return res.status(400).json({ error: 'Invalid 2FA method' });
     }
-    
+
     if (verified) {
       // Log the logout action
       console.log(`User ${req.user.username} logged out successfully with 2FA verification`);
-      
+
       // In a real app, you might want to blacklist the token or store logout timestamp
-      res.json({ 
-        success: true, 
-        message: 'Successfully logged out' 
+      res.json({
+        success: true,
+        message: 'Successfully logged out'
       });
     }
   } catch (error) {
     console.error('Logout error:', error);
     res.status(500).json({ error: 'Logout failed' });
+  }
+});
+
+// ===== PHISHING DETECTION ENDPOINTS =====
+
+// Test phishing detection (no auth for testing)
+app.post('/api/phishing/check', async (req, res) => {
+  try {
+    const { from, subject, body } = req.body;
+
+    if (!subject && !body) {
+      return res.status(400).json({ error: 'Subject or body required' });
+    }
+
+    const result = await checkPhishing({ from, subject, body });
+
+    res.json({
+      success: true,
+      ...result
+    });
+  } catch (error) {
+    console.error('Phishing check error:', error);
+    res.status(500).json({ error: 'Phishing check failed' });
+  }
+});
+
+// Get phishing detector status
+app.get('/api/phishing/status', async (req, res) => {
+  try {
+    const url = new URL(PHISHING_DETECTOR_URL);
+
+    http.get(`${PHISHING_DETECTOR_URL}/health`, (response) => {
+      let data = '';
+      response.on('data', chunk => data += chunk);
+      response.on('end', () => {
+        try {
+          const result = JSON.parse(data);
+          res.json({
+            success: true,
+            status: 'online',
+            service: result
+          });
+        } catch (e) {
+          res.json({ success: true, status: 'online', raw: data });
+        }
+      });
+    }).on('error', (e) => {
+      res.json({
+        success: false,
+        status: 'offline',
+        error: e.message
+      });
+    });
+  } catch (error) {
+    res.json({
+      success: false,
+      status: 'offline',
+      error: error.message
+    });
   }
 });
 
@@ -678,7 +717,7 @@ app.post('/api/auth/logout', auth, async (req, res) => {
 app.post('/api/mail/test', async (req, res) => {
   try {
     const { to, subject, text } = req.body;
-    
+
     if (!to || !subject || !text) {
       return res.status(400).json({ error: 'To, subject, and text are required' });
     }
@@ -692,8 +731,8 @@ app.post('/api/mail/test', async (req, res) => {
     );
 
     console.log('✅ Test email sent successfully:', result);
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: 'Test email sent successfully',
       messageId: result.messageId,
       previewUrl: result.previewUrl,
@@ -710,16 +749,16 @@ app.get('/api/mail/:folder', auth, async (req, res) => {
   const { folder } = req.params;
   const { page = 1, limit = 20 } = req.query;
   const validFolders = ['inbox', 'sent', 'drafts', 'spam', 'trash'];
-  
+
   if (!validFolders.includes(folder)) {
     return res.status(400).json({ error: 'Invalid folder' });
   }
 
   try {
     const result = await mailService.getEmailsByFolder(
-      req.user.email, 
-      folder, 
-      parseInt(page), 
+      req.user.email,
+      folder,
+      parseInt(page),
       parseInt(limit)
     );
     res.json(result);
@@ -732,16 +771,16 @@ app.get('/api/mail/:folder', auth, async (req, res) => {
 // Get single email by ID
 app.get('/api/mail/email/:emailId', auth, async (req, res) => {
   const { emailId } = req.params;
-  
+
   try {
     const email = await mailService.getEmailById(emailId, req.user.email);
-    
+
     // Mark as read if it's in inbox
     if (email.recipient === req.user.email && email.folder === 'inbox' && !email.read_status) {
       await mailService.markAsRead(emailId, req.user.email);
       email.read_status = true;
     }
-    
+
     res.json(email);
   } catch (error) {
     console.error('Get email error:', error);
@@ -753,7 +792,7 @@ app.get('/api/mail/email/:emailId', auth, async (req, res) => {
 app.get('/api/mail/search/:query', auth, async (req, res) => {
   const { query } = req.params;
   const { folder } = req.query;
-  
+
   if (!query || query.length < 2) {
     return res.status(400).json({ error: 'Search query must be at least 2 characters' });
   }
@@ -770,7 +809,7 @@ app.get('/api/mail/search/:query', auth, async (req, res) => {
 // Get email thread
 app.get('/api/mail/thread/:threadId', auth, async (req, res) => {
   const { threadId } = req.params;
-  
+
   try {
     const thread = await mailService.getEmailThread(threadId, req.user.email);
     res.json(thread);
@@ -783,10 +822,10 @@ app.get('/api/mail/thread/:threadId', auth, async (req, res) => {
 // Mark email as read (MongoDB)
 app.put('/api/mails/:emailId/read', auth, async (req, res) => {
   const { emailId } = req.params;
-  
+
   try {
     const result = await mongoMailService.updateMail(emailId, { isRead: true }, req.user.email);
-    
+
     if (result.success) {
       res.json({ success: true });
     } else {
@@ -803,7 +842,7 @@ app.put('/api/mail/:emailId/move', auth, async (req, res) => {
   const { emailId } = req.params;
   const { folder } = req.body;
   const validFolders = ['inbox', 'sent', 'drafts', 'spam', 'trash'];
-  
+
   if (!validFolders.includes(folder)) {
     return res.status(400).json({ error: 'Invalid folder' });
   }
@@ -820,7 +859,7 @@ app.put('/api/mail/:emailId/move', auth, async (req, res) => {
 // Star/unstar email
 app.put('/api/mail/:emailId/star', auth, async (req, res) => {
   const { emailId } = req.params;
-  
+
   try {
     const isStarred = await mailService.toggleStar(emailId, req.user.email);
     res.json({ success: true, is_starred: isStarred });
@@ -838,47 +877,21 @@ app.get('/api/mails/:folder', auth, async (req, res) => {
     const { folder } = req.params;
     const { page = 1, limit = 50, search } = req.query;
 
-    console.log(`📧 GET /api/mails/${folder} - User: ${req.user.email}, Page: ${page}`);
-
-    // Check if MongoDB service is connected
-    if (!mongoMailService.isConnected) {
-      console.error('❌ MongoDB not connected');
-      return res.status(503).json({ 
-        error: 'Database service unavailable',
-        mails: [],
-        totalCount: 0,
-        hasMore: false
-      });
-    }
-
     const result = await mongoMailService.getMailsByUser(req.user.email, {
       folder,
       limit: parseInt(limit),
-      skip: (parseInt(page) - 1) * parseInt(limit),
+      skip: (page - 1) * limit,
       search
     });
 
     if (result.success) {
-      console.log(`✅ Retrieved ${result.mails.length} mails from ${folder}`);
       res.json(result);
     } else {
-      console.error(`❌ Failed to get mails: ${result.error}`);
-      res.status(500).json({ 
-        error: result.error,
-        mails: [],
-        totalCount: 0,
-        hasMore: false
-      });
+      res.status(500).json({ error: result.error });
     }
   } catch (error) {
-    console.error('❌ Get mails error:', error);
-    res.status(500).json({ 
-      error: 'Failed to get mails',
-      details: error.message,
-      mails: [],
-      totalCount: 0,
-      hasMore: false
-    });
+    console.error('Get mails error:', error);
+    res.status(500).json({ error: 'Failed to get mails' });
   }
 });
 
@@ -905,10 +918,24 @@ app.get('/api/mail/:mailId', auth, async (req, res) => {
 app.post('/api/mail/send', auth, async (req, res) => {
   try {
     const { to, cc = [], bcc = [], subject, body, attachments = [] } = req.body;
-    
+
     if (!to || !Array.isArray(to) || to.length === 0) {
       return res.status(400).json({ error: 'Recipient email(s) required' });
     }
+
+    // ========== Phishing Detection ==========
+    const phishingResult = await checkPhishing({
+      from: req.user.email,
+      subject: subject || '',
+      body: body || ''
+    });
+
+    console.log(`📧 Mail phishing check: score=${phishingResult.risk_score}, level=${phishingResult.risk_level}`);
+
+    // Determine folder based on phishing result
+    const isPhishing = phishingResult.is_phishing;
+    const recipientFolder = isPhishing ? 'spam' : 'inbox';
+    // ========================================
 
     const mailData = {
       from: req.user.email,
@@ -921,7 +948,7 @@ app.post('/api/mail/send', auth, async (req, res) => {
       isRead: false,
       isStarred: false,
       isDeleted: false,
-      isSpam: false,
+      isSpam: isPhishing,
       isDraft: false,
       hasAttachments: attachments.length > 0,
       attachments,
@@ -929,7 +956,16 @@ app.post('/api/mail/send', auth, async (req, res) => {
       priority: 'normal',
       messageId: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       inReplyTo: null,
-      threadId: `thread_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      threadId: `thread_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      // Phishing detection results
+      phishing: {
+        checked: true,
+        score: phishingResult.risk_score,
+        level: phishingResult.risk_level,
+        levelDisplay: phishingResult.risk_level_display,
+        reasons: phishingResult.reasons,
+        checkedAt: new Date()
+      }
     };
 
     // Create mail for each recipient (excluding sender to avoid duplicates)
@@ -939,9 +975,9 @@ app.post('/api/mail/send', auth, async (req, res) => {
         const recipientMailData = {
           ...mailData,
           to: [recipient],
-          labels: ['inbox']
+          labels: [recipientFolder] // Use phishing-determined folder
         };
-        
+
         const result = await mongoMailService.createMail(recipientMailData);
         results.push(result);
       }
@@ -956,10 +992,15 @@ app.post('/api/mail/send', auth, async (req, res) => {
     const senderResult = await mongoMailService.createMail(senderCopy);
     results.push(senderResult);
 
-    res.json({ 
-      success: true, 
-      message: 'Mail sent successfully',
-      mailId: results[0]?.mailId 
+    res.json({
+      success: true,
+      message: isPhishing ? 'Mail sent (flagged as potential phishing)' : 'Mail sent successfully',
+      mailId: results[0]?.mailId,
+      phishing: {
+        flagged: isPhishing,
+        score: phishingResult.risk_score,
+        level: phishingResult.risk_level
+      }
     });
   } catch (error) {
     console.error('Send mail error:', error);
@@ -1146,8 +1187,8 @@ app.post('/api/mails/sample', auth, async (req, res) => {
       results.push(result);
     }
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: 'Sample mails created successfully',
       created: results.filter(r => r.success).length
     });
@@ -1161,7 +1202,7 @@ app.post('/api/mails/sample', auth, async (req, res) => {
 app.delete('/api/mails/drafts/clear', auth, async (req, res) => {
   try {
     const result = await mongoMailService.clearDrafts(req.user.email);
-    
+
     if (result.success) {
       res.json({ success: true, message: 'All drafts cleared' });
     } else {
@@ -1177,7 +1218,7 @@ app.delete('/api/mails/drafts/clear', auth, async (req, res) => {
 app.post('/api/mails/draft', auth, async (req, res) => {
   try {
     const { to, cc, bcc, subject, body } = req.body;
-    
+
     const draftData = {
       from: req.user.email,
       sender: req.user.email,
@@ -1198,7 +1239,7 @@ app.post('/api/mails/draft', auth, async (req, res) => {
     };
 
     const result = await mongoMailService.createMail(draftData);
-    
+
     if (result.success) {
       res.json({ success: true, draft: result.mail });
     } else {
@@ -1213,7 +1254,7 @@ app.post('/api/mails/draft', auth, async (req, res) => {
 // Delete email
 app.delete('/api/mail/:emailId', auth, async (req, res) => {
   const { emailId } = req.params;
-  
+
   try {
     await mailService.deleteEmail(emailId, req.user.email);
     res.json({ success: true });
@@ -1250,19 +1291,16 @@ app.post('/api/mail/sample', auth, async (req, res) => {
 // Get inbox emails
 app.get('/api/mails/inbox', auth, async (req, res) => {
   try {
-    console.log('📥 Fetching inbox for:', req.user.email);
-    const result = await mongoMailService.getMailsByUser(req.user.email, {
+    const result = await mailService.getMailsByUser(req.user.email, {
       folder: 'inbox',
       limit: 50
     });
-    
-    console.log('📥 Inbox result:', result.success ? `${result.mails?.length || 0} mails found` : result.error);
-    
+
     if (result.success) {
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         mails: result.mails || [],
-        total: result.totalCount || 0
+        total: result.total || 0
       });
     } else {
       res.status(500).json({ error: result.error || 'Failed to fetch inbox' });
@@ -1276,19 +1314,16 @@ app.get('/api/mails/inbox', auth, async (req, res) => {
 // Get sent emails
 app.get('/api/mails/sent', auth, async (req, res) => {
   try {
-    console.log('📤 Fetching sent emails for:', req.user.email);
-    const result = await mongoMailService.getMailsByUser(req.user.email, {
+    const result = await mailService.getMailsByUser(req.user.email, {
       folder: 'sent',
       limit: 50
     });
-    
-    console.log('📤 Sent result:', result.success ? `${result.mails?.length || 0} mails found` : result.error);
-    
+
     if (result.success) {
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         mails: result.mails || [],
-        total: result.totalCount || 0
+        total: result.total || 0
       });
     } else {
       res.status(500).json({ error: result.error || 'Failed to fetch sent emails' });
@@ -1302,19 +1337,16 @@ app.get('/api/mails/sent', auth, async (req, res) => {
 // Get draft emails
 app.get('/api/mails/drafts', auth, async (req, res) => {
   try {
-    console.log('📝 Fetching drafts for:', req.user.email);
-    const result = await mongoMailService.getMailsByUser(req.user.email, {
+    const result = await mailService.getMailsByUser(req.user.email, {
       folder: 'drafts',
       limit: 50
     });
-    
-    console.log('📝 Drafts result:', result.success ? `${result.mails?.length || 0} drafts found` : result.error);
-    
+
     if (result.success) {
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         mails: result.mails || [],
-        total: result.totalCount || 0
+        total: result.total || 0
       });
     } else {
       res.status(500).json({ error: result.error || 'Failed to fetch drafts' });
@@ -1328,61 +1360,35 @@ app.get('/api/mails/drafts', auth, async (req, res) => {
 // Send email with confirmation
 app.post('/api/mails/send', auth, async (req, res) => {
   try {
-    console.log('📧 Send email request received from:', req.user.email);
-    
-    let { to, subject, body, cc = [], bcc = [], confirmSend = true } = req.body;
-    
-    // Validate input
-    if (!to || !subject || !body) {
-      return res.status(400).json({ 
-        error: 'Missing required fields',
-        details: 'to, subject, and body are required'
-      });
-    }
-    
-    // Normalize email addresses - add @ssm.com if not present
-    const normalizeEmail = (email) => {
-      if (!email) return '';
-      email = email.toString().trim();
-      if (!email.includes('@')) {
-        return `${email}@ssm.com`;
-      }
-      return email;
-    };
-    
-    // Ensure to is array and normalize all emails
-    if (!Array.isArray(to)) {
-      to = [to];
-    }
-    to = to.map(normalizeEmail).filter(email => email);
-    cc = cc.map(normalizeEmail).filter(email => email);
-    bcc = bcc.map(normalizeEmail).filter(email => email);
-    
-    if (to.length === 0) {
-      return res.status(400).json({ error: 'At least one valid recipient required' });
-    }
-    
-    console.log('📧 Sending email:', { from: req.user.email, to, cc, bcc, subject });
-    
+    console.log('📧 Send email request received:', {
+      from: req.user.email,
+      body: req.body,
+      headers: req.headers
+    });
+
+    const { to, cc, bcc, subject, body, confirmSend } = req.body;
+
+    console.log('📧 Extracted data:', { to, cc, bcc, subject, body, confirmSend });
+
     // If no confirmation yet, save as draft and return confirmation prompt
     if (!confirmSend) {
       console.log('📧 No confirmation, saving as draft...');
-      
+
       const draftData = {
         from: req.user.email,
-        to: to,
-        cc: cc,
-        bcc: bcc,
+        to: Array.isArray(to) ? to : [to],
+        cc: cc ? (Array.isArray(cc) ? cc : [cc]) : [],
+        bcc: bcc ? (Array.isArray(bcc) ? bcc : [bcc]) : [],
         subject: subject || '',
         body: body || '',
         isDraft: true,
         createdAt: new Date()
       };
-      
+
       console.log('📧 Saving draft data:', draftData);
       const result = await mongoMailService.saveDraft(draftData);
       console.log('📧 Draft save result:', result);
-      
+
       const response = {
         success: true,
         requiresConfirmation: true,
@@ -1396,21 +1402,18 @@ app.post('/api/mails/send', auth, async (req, res) => {
           body: draftData.body
         }
       };
-      
+
       console.log('📧 Sending response:', response);
       return res.json(response);
     }
-    
+
     // If confirmed, send the email
-    const messageId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}@ssm.com`;
-    const now = new Date();
-    
     const mailData = {
       from: req.user.email,
       sender: req.user.email,
-      to: to,
-      cc: cc,
-      bcc: bcc,
+      to: Array.isArray(to) ? to : [to],
+      cc: cc ? (Array.isArray(cc) ? cc : [cc]) : [],
+      bcc: bcc ? (Array.isArray(bcc) ? bcc : [bcc]) : [],
       subject: subject || '',
       body: body || '',
       isDraft: false,
@@ -1418,88 +1421,64 @@ app.post('/api/mails/send', auth, async (req, res) => {
       isStarred: false,
       isDeleted: false,
       isSpam: false,
-      messageId: messageId,
-      sentAt: now,
-      date: now,
+      messageId: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}@ssm.com`,
+      sentAt: new Date(),
+      date: new Date(),
       folder: 'sent',
       labels: ['sent']
     };
-    
-    console.log('📧 Creating sent copy for sender:', req.user.email);
+
     // Save to MongoDB - sent copy for sender
     const result = await mongoMailService.createMail(mailData);
-    
+
     // Create inbox copy for each recipient (excluding sender to avoid duplicates)
-    const allRecipients = [...to, ...cc, ...bcc].filter(email => email && email !== req.user.email);
-    console.log('📧 Creating inbox copies for recipients:', allRecipients);
-    
-    // Check for phishing before delivering to recipients
-    console.log('🔍 Checking email for phishing...');
-    const phishingCheck = await checkEmailForPhishing({
-      from: req.user.email,
-      subject: mailData.subject,
-      body: mailData.body
-    });
-    
-    // Determine folder based on phishing detection
-    const deliveryFolder = phishingCheck.is_phishing ? 'spam' : 'inbox';
-    const deliveryLabels = phishingCheck.is_phishing ? ['spam'] : ['inbox'];
-    
-    if (phishingCheck.is_phishing) {
-      console.log(`⚠️  PHISHING DETECTED (confidence: ${phishingCheck.confidence}%)`);
-      console.log('   Reasons:', phishingCheck.reasons?.join(', '));
-      console.log('   → Delivering to SPAM folder');
-    } else {
-      console.log('✅ Email appears safe → Delivering to INBOX');
+    for (const recipient of mailData.to) {
+      if (recipient !== req.user.email) {
+        const inboxCopy = {
+          from: req.user.email,
+          sender: req.user.email,
+          to: [recipient],
+          cc: mailData.cc,
+          bcc: mailData.bcc,
+          subject: mailData.subject,
+          body: mailData.body,
+          isDraft: false,
+          isRead: false,
+          isStarred: false,
+          isDeleted: false,
+          isSpam: false,
+          messageId: mailData.messageId,
+          sentAt: mailData.sentAt,
+          date: mailData.sentAt,
+          folder: 'inbox',
+          labels: ['inbox']
+        };
+        await mongoMailService.createMail(inboxCopy);
+        console.log(`📧 Created inbox copy for recipient: ${recipient}`);
+      }
     }
-    
-    for (const recipient of allRecipients) {
-      const inboxCopy = {
-        from: req.user.email,
-        sender: req.user.email,
-        to: [recipient],
-        cc: cc,
-        bcc: bcc,
-        subject: mailData.subject,
-        body: mailData.body,
-        isDraft: false,
-        isRead: false,
-        isStarred: false,
-        isDeleted: false,
-        isSpam: phishingCheck.is_phishing,
-        messageId: messageId,
-        sentAt: now,
-        date: now,
-        folder: deliveryFolder,
-        labels: deliveryLabels,
-        phishingScore: phishingCheck.confidence,
-        phishingReasons: phishingCheck.reasons
-      };
-      const inboxResult = await mongoMailService.createMail(inboxCopy);
-      console.log(`📧 Created ${deliveryFolder} copy for recipient: ${recipient}, mailId: ${inboxResult.mailId}`);
-    }
-    
+
     // Don't send via SMTP to avoid double creation
     console.log('📧 Email saved to database without SMTP to prevent duplicates');
-    
+
     // Clear drafts after successful send to prevent duplicates in inbox
     await mongoMailService.clearDrafts(req.user.email);
     console.log('📧 Cleared drafts after successful send');
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       mailId: result.mailId,
       message: '✅ Email sent successfully!',
       notification: {
         type: 'success',
         title: 'Email Sent',
-        message: `Your email "${mailData.subject}" has been sent successfully to ${allRecipients.length} recipient(s).`,
+        message: `Your email "${mailData.subject}" has been sent successfully.`,
         timestamp: new Date()
       }
     });
   } catch (error) {
     console.error('Send email error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to send email',
       notification: {
         type: 'error',
@@ -1585,17 +1564,17 @@ app.post('/api/mails/sample', auth, async (req, res) => {
         messageId: `support-${Date.now()}@ssm.com`
       }
     ];
-    
+
     let created = 0;
     for (const email of sampleEmails) {
       const result = await mailService.createMail(email);
       if (result.success) created++;
     }
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       message: `${created} sample emails created`,
-      created 
+      created
     });
   } catch (error) {
     console.error('Create sample emails error:', error);
@@ -1610,19 +1589,19 @@ app.post('/api/create-test-user', async (req, res) => {
     const password = '123456';
     const name = 'Test User';
     const email = 'test@ssm.com';
-    
+
     // Check if user already exists
     const [existing] = await db.query('SELECT id FROM users WHERE username = ? OR email = ?', [username, email]);
     if (existing.length > 0) {
       return res.json({ success: true, message: 'Test user already exists' });
     }
-    
+
     // Create user
     const hash = await bcrypt.hash(password, 10);
     const [result] = await db.query('INSERT INTO users (name, username, email, password) VALUES (?, ?, ?, ?)', [name, username, email, hash]);
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       message: 'Test user created successfully',
       user: { id: result.insertId, username, email, name }
     });
@@ -1632,5 +1611,5 @@ app.post('/api/create-test-user', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log('Server running on port', PORT));
