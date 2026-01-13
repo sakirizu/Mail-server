@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, Alert, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/theme';
 import { useAuth } from '../context/AuthContext';
 
@@ -303,7 +304,11 @@ export default function TwoFactorAuthScreen() {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={true}
+    >
       <View style={styles.header}>
         <Text style={styles.title}>二段階認証 (2FA)</Text>
         <Text style={styles.subtitle}>アカウントのセキュリティを強化するために2FAを設定してください</Text>
@@ -457,70 +462,103 @@ export default function TwoFactorAuthScreen() {
       {/* TOTP Setup Modal */}
       {showTOTPSetup && totpSecret && (
         <View style={styles.modal}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>TOTP 設定</Text>
+          <ScrollView 
+            style={styles.modalScrollView}
+            contentContainerStyle={styles.modalScrollContent}
+            showsVerticalScrollIndicator={true}
+          >
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>TOTP Sozlash</Text>
 
-            <Text style={styles.modalStep}>1. QRコードをスキャンしてください:</Text>
-            <Image source={{ uri: totpSecret.qrCode }} style={styles.qrCode} />
+              <Text style={styles.modalStep}>1. QR kodni skanerlang yoki qo'lda kiriting:</Text>
+              
+              {/* QR Code va Manual Code yonma-yon */}
+              <View style={styles.setupContainer}>
+                <View style={styles.qrSection}>
+                  <Text style={styles.sectionLabel}>QR Kod</Text>
+                  <Image source={{ uri: totpSecret.qrCode }} style={styles.qrCode} />
+                </View>
+                
+                <View style={styles.manualSection}>
+                  <Text style={styles.sectionLabel}>Qo'lda Kod</Text>
+                  <Text style={styles.secretKey}>{totpSecret.secret}</Text>
+                  <Text style={styles.helpText}>
+                    Agar skanerlay olmasangiz, bu kodni qo'lda kiriting
+                  </Text>
+                </View>
+              </View>
 
-            <Text style={styles.modalStep}>2. または手動で入力してください:</Text>
-            <Text style={styles.secretKey}>{totpSecret.secret}</Text>
+              <Text style={styles.modalStep}>2. Ilovaldan 6 raqamli kodni kiriting:</Text>
+              <TextInput
+                style={styles.totpInput}
+                placeholder="123456"
+                value={totpCode}
+                onChangeText={setTotpCode}
+                keyboardType="number-pad"
+                maxLength={6}
+                placeholderTextColor={colors.placeholder}
+              />
 
-            <Text style={styles.modalStep}>3. アプリの6桁のコードを入力してください:</Text>
-            <TextInput
-              style={styles.totpInput}
-              placeholder="123456"
-              value={totpCode}
-              onChangeText={setTotpCode}
-              keyboardType="number-pad"
-              maxLength={6}
-              placeholderTextColor={colors.placeholder}
-            />
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => {
-                  setShowTOTPSetup(false);
-                  setTotpCode('');
-                }}
-              >
-                <Text style={styles.cancelButtonText}>キャンセル</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.confirmButton, loading && styles.buttonDisabled]}
-                onPress={enableTOTP}
-                disabled={loading}
-              >
-                <Text style={styles.confirmButtonText}>確認</Text>
-              </TouchableOpacity>
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => {
+                    setShowTOTPSetup(false);
+                    setTotpCode('');
+                  }}
+                >
+                  <Text style={styles.cancelButtonText}>Bekor qilish</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.confirmButton, loading && styles.buttonDisabled]}
+                  onPress={enableTOTP}
+                  disabled={loading}
+                >
+                  <Text style={styles.confirmButtonText}>Keyingi</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
+          </ScrollView>
         </View>
       )}
 
       {/* Backup Codes Display */}
       {backupCodes.length > 0 && (
         <View style={styles.modal}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>バックアップコード</Text>
-            <Text style={styles.backupWarning}>
-              これらのコードを安全な場所に保管してください！各コードは一度だけ使用できます。
-            </Text>
+          <ScrollView 
+            style={styles.modalScrollView}
+            contentContainerStyle={styles.modalScrollContent}
+            showsVerticalScrollIndicator={true}
+          >
+            <View style={styles.modalContent}>
+              <View style={styles.successIcon}>
+                <Ionicons name="checkmark-circle" size={60} color="#34C759" />
+              </View>
+              <Text style={styles.modalTitle}>Muvaffaqiyatli faollashtirildi!</Text>
+              <Text style={styles.backupWarning}>
+                ⚠️ Bu zaxira kodlarni xavfsiz joyda saqlang!
+              </Text>
+              <Text style={styles.backupSubtitle}>
+                Har bir kod faqat bir marta ishlatilishi mumkin. Agar authentikator ilovangizga kirish imkoningiz bo'lmasa, bu kodlar sizni qutqaradi.
+              </Text>
 
-            <View style={styles.backupCodes}>
-              {backupCodes.map((code, index) => (
-                <Text key={index} style={styles.backupCode}>{code}</Text>
-              ))}
+              <View style={styles.backupCodes}>
+                {backupCodes.map((code, index) => (
+                  <View key={index} style={styles.backupCodeItem}>
+                    <Text style={styles.backupCodeNumber}>{index + 1}.</Text>
+                    <Text style={styles.backupCode}>{code}</Text>
+                  </View>
+                ))}
+              </View>
+
+              <TouchableOpacity
+                style={styles.confirmButton}
+                onPress={() => setBackupCodes([])}
+              >
+                <Text style={styles.confirmButtonText}>Saqlash tugmasi bosildi - Davom etish</Text>
+              </TouchableOpacity>
             </View>
-
-            <TouchableOpacity
-              style={styles.confirmButton}
-              onPress={() => setBackupCodes([])}
-            >
-              <Text style={styles.confirmButtonText}>保存しました</Text>
-            </TouchableOpacity>
-          </View>
+          </ScrollView>
         </View>
       )}
     </ScrollView>
@@ -531,6 +569,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  scrollContent: {
+    paddingBottom: 30,
   },
   loading: {
     flex: 1,
@@ -717,13 +758,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  modalScrollView: {
+    maxHeight: '90%',
+    width: '90%',
+    maxWidth: 400,
+  },
+  modalScrollContent: {
+    flexGrow: 1,
+  },
   modalContent: {
     backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 24,
-    margin: 20,
-    maxWidth: 400,
-    width: '90%',
     elevation: 8,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 4 },
@@ -744,21 +790,49 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 8,
   },
+  setupContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginVertical: 16,
+    gap: 16,
+  },
+  qrSection: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  manualSection: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: colors.primary,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
   qrCode: {
-    width: 200,
-    height: 200,
-    alignSelf: 'center',
-    marginBottom: 16,
+    width: 150,
+    height: 150,
+    borderRadius: 8,
   },
   secretKey: {
-    fontSize: 14,
+    fontSize: 12,
     fontFamily: 'monospace',
     backgroundColor: colors.background,
-    padding: 12,
+    padding: 10,
     borderRadius: 8,
-    textAlign: 'center',
     color: colors.text,
     marginBottom: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  helpText: {
+    fontSize: 11,
+    color: colors.placeholder,
+    fontStyle: 'italic',
+    textAlign: 'center',
   },
   totpInput: {
     height: 48,
@@ -801,11 +875,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  backupWarning: {
-    fontSize: 14,
-    color: '#ff6600',
+  successIcon: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  backupSubtitle: {
+    fontSize: 13,
+    color: colors.text,
     textAlign: 'center',
     marginBottom: 16,
+    lineHeight: 20,
+  },
+  backupWarning: {
+    fontSize: 15,
+    color: '#ff6600',
+    textAlign: 'center',
+    marginBottom: 12,
     fontWeight: 'bold',
   },
   backupCodes: {
@@ -813,15 +898,28 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  backupCodeItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border + '30',
+  },
+  backupCodeNumber: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: colors.primary,
+    marginRight: 12,
+    width: 25,
   },
   backupCode: {
     fontSize: 16,
     fontFamily: 'monospace',
     color: colors.text,
-    textAlign: 'center',
-    paddingVertical: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border + '30',
+    flex: 1,
   },
 });
 

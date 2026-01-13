@@ -4,10 +4,10 @@ const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
-const TwoFactorAuth = require('./services/twoFactorAuth');
-const MailService = require('./services/mailService');
-const MongoMailService = require('./services/mongoMailService');
-const HybridMailService = require('./services/hybridMailService');
+const TwoFactorAuth = require('./twoFactorAuth');
+const MailService = require('./mailService');
+const MongoMailService = require('./mongoMailService');
+const HybridMailService = require('./hybridMailService');
 const http = require('http');
 
 // Phishing Detection Service URL
